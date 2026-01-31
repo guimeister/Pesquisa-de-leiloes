@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}Pesquisar Relogios{% endblock %}
+
+{% block content %}
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-watch"></i> Total</h5>
+                <h2 class="mb-0" id="stat-total">{{ stats.total_watches }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-tags"></i> Marcas</h5>
+                <h2 class="mb-0" id="stat-brands">{{ stats.unique_brands }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-currency-dollar"></i> Preco Medio</h5>
+                <h2 class="mb-0" id="stat-avg">{{ stats.avg_price | currency }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-graph-up"></i> Maior Preco</h5>
+                <h2 class="mb-0" id="stat-max">{{ stats.max_price | currency }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search Form -->
+<div class="card mb-4">
+    <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="bi bi-search"></i> Filtros de Pesquisa</h5>
+    </div>
+    <div class="card-body">
+        <form id="search-form">
+            <div class="row g-3">
+                <div class="col-md-12">
+                    <label class="form-label">Busca por texto</label>
+                    <input type="text" class="form-control form-control-lg" id="query" name="q"
+                           placeholder="Digite marca, modelo ou descricao...">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Marca</label>
+                    <select class="form-select" id="brand" name="brand">
+                        <option value="">Todas as marcas</option>
+                        {% for brand in brands %}
+                        <option value="{{ brand }}">{{ brand }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Material</label>
+                    <select class="form-select" id="material" name="material">
+                        <option value="">Todos os materiais</option>
+                        {% for material in materials %}
+                        <option value="{{ material }}">{{ material }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Ano</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="year_from" name="year_from"
+                               placeholder="De" min="1900" max="2030">
+                        <span class="input-group-text">-</span>
+                        <input type="number" class="form-control" id="year_to" name="year_to"
+                               placeholder="Ate" min="1900" max="2030">
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Faixa de Preco (R$)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">R$</span>
+                        <input type="number" class="form-control" id="min_price" name="min_price"
+                               placeholder="Minimo" min="0" step="100">
+                        <span class="input-group-text">-</span>
+                        <input type="number" class="form-control" id="max_price" name="max_price"
+                               placeholder="Maximo" min="0" step="100">
+                    </div>
+                </div>
+
+                <div class="col-md-6 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="bi bi-search"></i> Pesquisar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Results -->
+<div class="card">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-list"></i> Resultados</h5>
+        <span id="results-count" class="badge bg-light text-dark">0 relogios</span>
+    </div>
+    <div class="card-body p-0">
+        <div id="loading" class="text-center py-5 d-none">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+        </div>
+
+        <div id="no-results" class="text-center py-5 d-none">
+            <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+            <p class="text-muted mt-3">Nenhum relogio encontrado</p>
+        </div>
+
+        <div id="results" class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 80px;">Imagem</th>
+                        <th>Marca</th>
+                        <th>Modelo</th>
+                        <th>Material</th>
+                        <th>Ano</th>
+                        <th class="text-end">Preco</th>
+                        <th style="width: 50px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="results-body">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Load More -->
+<div class="text-center my-4 d-none" id="load-more-container">
+    <button class="btn btn-outline-primary" id="load-more">
+        <i class="bi bi-arrow-down-circle"></i> Carregar mais
+    </button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const resultsBody = document.getElementById('results-body');
+const resultsCount = document.getElementById('results-count');
+const loading = document.getElementById('loading');
+const noResults = document.getElementById('no-results');
+const loadMoreContainer = document.getElementById('load-more-container');
+const searchForm = document.getElementById('search-form');
+
+let currentOffset = 0;
+const limit = 50;
+
+function formatCurrency(value) {
+    if (!value) return 'N/A';
+    return 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+}
+
+function createWatchRow(watch) {
+    const row = document.createElement('tr');
+    row.style.cursor = 'pointer';
+    row.onclick = () => window.location.href = `/watch/${watch.id}`;
+
+    row.innerHTML = `
+        <td>
+            ${watch.image_url ?
+                `<img src="${watch.image_url}" class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;">` :
+                `<div class="bg-light d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;"><i class="bi bi-watch text-muted"></i></div>`
+            }
+        </td>
+        <td><strong>${watch.brand || '-'}</strong></td>
+        <td>${watch.model || watch.description?.substring(0, 30) || '-'}</td>
+        <td><span class="badge bg-secondary">${watch.material || '-'}</span></td>
+        <td>${watch.year || '-'}</td>
+        <td class="text-end fw-bold text-success">${formatCurrency(watch.current_price)}</td>
+        <td><i class="bi bi-chevron-right text-muted"></i></td>
+    `;
+
+    return row;
+}
+
+async function search(append = false) {
+    if (!append) {
+        currentOffset = 0;
+        resultsBody.innerHTML = '';
+    }
+
+    loading.classList.remove('d-none');
+    noResults.classList.add('d-none');
+
+    const formData = new FormData(searchForm);
+    const params = new URLSearchParams();
+
+    for (const [key, value] of formData) {
+        if (value) params.append(key, value);
+    }
+    params.append('limit', limit);
+    params.append('offset', currentOffset);
+
+    try {
+        const response = await fetch(`/api/search?${params}`);
+        const data = await response.json();
+
+        loading.classList.add('d-none');
+
+        if (data.results.length === 0 && !append) {
+            noResults.classList.remove('d-none');
+            resultsCount.textContent = '0 relogios';
+            loadMoreContainer.classList.add('d-none');
+            return;
+        }
+
+        data.results.forEach(watch => {
+            resultsBody.appendChild(createWatchRow(watch));
+        });
+
+        const total = currentOffset + data.results.length;
+        resultsCount.textContent = `${total} relogios`;
+
+        if (data.results.length === limit) {
+            loadMoreContainer.classList.remove('d-none');
+            currentOffset += limit;
+        } else {
+            loadMoreContainer.classList.add('d-none');
+        }
+
+    } catch (error) {
+        console.error('Search error:', error);
+        loading.classList.add('d-none');
+    }
+}
+
+searchForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    search();
+});
+
+document.getElementById('load-more').addEventListener('click', () => {
+    search(true);
+});
+
+// Initial search
+search();
+</script>
+{% endblock %}

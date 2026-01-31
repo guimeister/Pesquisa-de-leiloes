@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}{{ watch.brand }} {{ watch.model or '' }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Pesquisar</a></li>
+        <li class="breadcrumb-item active">{{ watch.brand or 'Relogio' }} #{{ watch.id }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <!-- Image Column -->
+    <div class="col-lg-5 mb-4">
+        <div class="card">
+            <div class="card-body text-center">
+                {% if watch.image_url %}
+                <img src="{{ watch.image_url }}" class="img-fluid rounded" alt="{{ watch.description }}"
+                     style="max-height: 400px; object-fit: contain;">
+                {% else %}
+                <div class="bg-light d-flex align-items-center justify-content-center rounded"
+                     style="height: 300px;">
+                    <i class="bi bi-watch text-muted" style="font-size: 5rem;"></i>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if watch.source_url %}
+        <div class="mt-3">
+            <a href="{{ watch.source_url }}" target="_blank" class="btn btn-outline-primary w-100">
+                <i class="bi bi-box-arrow-up-right"></i> Ver no site original
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Details Column -->
+    <div class="col-lg-7">
+        <!-- Price Card -->
+        <div class="card bg-success text-white mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0 opacity-75">Preco Atual</h6>
+                        <h2 class="mb-0">{{ watch.current_price | currency }}</h2>
+                    </div>
+                    {% if watch.lot_number %}
+                    <div class="text-end">
+                        <span class="badge bg-light text-dark fs-6">Lote {{ watch.lot_number }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Info Card -->
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informacoes</h5>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title">{{ watch.description or 'Sem descricao' }}</h4>
+
+                <div class="row mt-4">
+                    <div class="col-6 col-md-4 mb-3">
+                        <div class="text-muted small">Marca</div>
+                        <div class="fw-bold fs-5">{{ watch.brand or '-' }}</div>
+                    </div>
+                    <div class="col-6 col-md-4 mb-3">
+                        <div class="text-muted small">Modelo</div>
+                        <div class="fw-bold fs-5">{{ watch.model or '-' }}</div>
+                    </div>
+                    <div class="col-6 col-md-4 mb-3">
+                        <div class="text-muted small">Ano</div>
+                        <div class="fw-bold fs-5">{{ watch.year or '-' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Materials Card -->
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="bi bi-gem"></i> Materiais</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="text-muted small">Material da Caixa</div>
+                        <div class="fw-bold">
+                            {% if watch.material %}
+                            <span class="badge bg-primary fs-6">{{ watch.material }}</span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="text-muted small">Material da Pulseira</div>
+                        <div class="fw-bold">
+                            {% if watch.bracelet_material %}
+                            <span class="badge bg-secondary fs-6">{{ watch.bracelet_material }}</span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="text-muted small">Peso</div>
+                        <div class="fw-bold fs-5">{{ watch.weight or '-' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Specifications Card -->
+        {% if watch.specification %}
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="bi bi-gear"></i> Especificacoes</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ watch.specification }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Full Description Card -->
+        {% if watch.raw_description %}
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="bi bi-file-text"></i> Descricao Completa</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0" style="white-space: pre-wrap;">{{ watch.raw_description }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Metadata -->
+<div class="card mt-4 bg-light">
+    <div class="card-body">
+        <div class="row text-muted small">
+            <div class="col-md-4">
+                <i class="bi bi-globe"></i> Fonte: {{ watch.source_site }}
+            </div>
+            <div class="col-md-4">
+                <i class="bi bi-calendar"></i> Coletado: {{ watch.scraped_at | datetime }}
+            </div>
+            <div class="col-md-4">
+                <i class="bi bi-hash"></i> ID: {{ watch.id }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

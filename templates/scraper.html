@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Scraper{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="bi bi-cloud-download"></i> Scraper de Leiloes</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    O scraper coleta informacoes de relogios em leilao do site leiloesbr.com.br.
+                    Configure os parametros abaixo e inicie a coleta.
+                </p>
+
+                <form id="scraper-form">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Maximo de Paginas</label>
+                            <input type="number" class="form-control" id="max_pages" name="max_pages"
+                                   value="5" min="1" max="50">
+                            <div class="form-text">Numero maximo de paginas de listagem a processar</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Maximo de Itens</label>
+                            <input type="number" class="form-control" id="max_items" name="max_items"
+                                   placeholder="Sem limite" min="1">
+                            <div class="form-text">Deixe vazio para coletar todos os itens</div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg w-100" id="start-btn">
+                        <i class="bi bi-play-circle"></i> Iniciar Scraping
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Status Card -->
+        <div class="card mt-4" id="status-card" style="display: none;">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-activity"></i> Status</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="spinner-border spinner-border-sm text-primary me-2" id="status-spinner"></div>
+                    <span id="status-message">Iniciando...</span>
+                </div>
+
+                <div class="progress mb-3" style="height: 25px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated"
+                         id="progress-bar" role="progressbar" style="width: 0%;">
+                        0%
+                    </div>
+                </div>
+
+                <div class="row text-center">
+                    <div class="col">
+                        <div class="h4 mb-0" id="items-found">0</div>
+                        <small class="text-muted">Itens Encontrados</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Card -->
+        <div class="card mt-4 border-success" id="success-card" style="display: none;">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-check-circle"></i> Concluido</h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="h1 text-success mb-3">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <p id="success-message" class="lead"></p>
+                <a href="/" class="btn btn-success">
+                    <i class="bi bi-search"></i> Ver Relogios
+                </a>
+            </div>
+        </div>
+
+        <!-- Info Cards -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="bi bi-info-circle text-primary"></i> Como funciona</h6>
+                        <ul class="small text-muted mb-0">
+                            <li>O scraper acessa a pagina de relogios</li>
+                            <li>Coleta links de todos os lotes</li>
+                            <li>Extrai informacoes de cada relogio</li>
+                            <li>Identifica marca, modelo, material, etc.</li>
+                            <li>Salva no banco de dados local</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="bi bi-exclamation-triangle text-warning"></i> Atencao</h6>
+                        <ul class="small text-muted mb-0">
+                            <li>O processo pode demorar alguns minutos</li>
+                            <li>Nao feche esta pagina durante o scraping</li>
+                            <li>Itens duplicados sao ignorados</li>
+                            <li>Respeite os termos de uso do site</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const scraperForm = document.getElementById('scraper-form');
+const startBtn = document.getElementById('start-btn');
+const statusCard = document.getElementById('status-card');
+const successCard = document.getElementById('success-card');
+const statusMessage = document.getElementById('status-message');
+const statusSpinner = document.getElementById('status-spinner');
+const progressBar = document.getElementById('progress-bar');
+const itemsFound = document.getElementById('items-found');
+const successMessage = document.getElementById('success-message');
+
+let statusInterval = null;
+
+async function checkStatus() {
+    try {
+        const response = await fetch('/api/scrape/status');
+        const status = await response.json();
+
+        statusMessage.textContent = status.message;
+        progressBar.style.width = status.progress + '%';
+        progressBar.textContent = status.progress + '%';
+        itemsFound.textContent = status.items_found;
+
+        if (!status.is_running && status.progress === 100) {
+            // Completed
+            clearInterval(statusInterval);
+            statusCard.style.display = 'none';
+            successCard.style.display = 'block';
+            successMessage.textContent = status.message;
+            startBtn.disabled = false;
+            startBtn.innerHTML = '<i class="bi bi-play-circle"></i> Iniciar Scraping';
+        } else if (!status.is_running && status.message.startsWith('Error')) {
+            // Error
+            clearInterval(statusInterval);
+            statusSpinner.style.display = 'none';
+            statusMessage.classList.add('text-danger');
+            startBtn.disabled = false;
+            startBtn.innerHTML = '<i class="bi bi-play-circle"></i> Tentar Novamente';
+        }
+    } catch (error) {
+        console.error('Status check error:', error);
+    }
+}
+
+scraperForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const maxPages = parseInt(document.getElementById('max_pages').value) || 5;
+    const maxItems = document.getElementById('max_items').value ?
+                     parseInt(document.getElementById('max_items').value) : null;
+
+    startBtn.disabled = true;
+    startBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Iniciando...';
+
+    successCard.style.display = 'none';
+    statusCard.style.display = 'block';
+    statusMessage.classList.remove('text-danger');
+    statusSpinner.style.display = 'inline-block';
+
+    try {
+        const response = await fetch('/api/scrape', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ max_pages: maxPages, max_items: maxItems })
+        });
+
+        const result = await response.json();
+
+        if (result.error) {
+            statusMessage.textContent = result.error;
+            statusMessage.classList.add('text-danger');
+            startBtn.disabled = false;
+            startBtn.innerHTML = '<i class="bi bi-play-circle"></i> Tentar Novamente';
+            return;
+        }
+
+        // Start polling for status
+        statusInterval = setInterval(checkStatus, 2000);
+
+    } catch (error) {
+        console.error('Start scraping error:', error);
+        statusMessage.textContent = 'Erro ao iniciar scraping';
+        statusMessage.classList.add('text-danger');
+        startBtn.disabled = false;
+        startBtn.innerHTML = '<i class="bi bi-play-circle"></i> Tentar Novamente';
+    }
+});
+</script>
+{% endblock %}
