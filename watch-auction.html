@@ -19,12 +19,13 @@
         .modal-xl { max-width: 900px; }
         .site-badge { cursor: pointer; transition: all 0.2s; }
         .site-badge:hover { transform: scale(1.05); }
-        .site-badge.active { ring: 2px solid #0d6efd; }
         .nav-pills .nav-link.active { background-color: #2c3e50; }
+        .subpage-link { font-size: 0.85rem; word-break: break-all; }
+        .batch-status { font-size: 0.9rem; }
+        .page-badge { font-size: 0.75rem; }
     </style>
 </head>
 <body>
-    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
         <div class="container">
             <a class="navbar-brand" href="#"><i class="bi bi-watch"></i> Watch Auction</a>
@@ -40,7 +41,6 @@
     </nav>
 
     <main class="container py-4">
-        <!-- Tabs -->
         <ul class="nav nav-pills mb-4" role="tablist">
             <li class="nav-item">
                 <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-search">
@@ -53,6 +53,11 @@
                 </button>
             </li>
             <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-batch">
+                    <i class="bi bi-collection"></i> Importar Múltiplas Páginas
+                </button>
+            </li>
+            <li class="nav-item">
                 <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-sites">
                     <i class="bi bi-gear"></i> Configurar Sites
                 </button>
@@ -62,7 +67,6 @@
         <div class="tab-content">
             <!-- Tab: Search -->
             <div class="tab-pane fade show active" id="tab-search">
-                <!-- Stats -->
                 <div class="row mb-4">
                     <div class="col-md-3 mb-2">
                         <div class="card stat-card bg-primary text-white">
@@ -100,7 +104,6 @@
                     </div>
                 </div>
 
-                <!-- Search Filters -->
                 <div class="card mb-4">
                     <div class="card-header bg-dark text-white">
                         <h5 class="mb-0"><i class="bi bi-search"></i> Filtros de Pesquisa</h5>
@@ -130,7 +133,6 @@
                     </div>
                 </div>
 
-                <!-- Results -->
                 <div class="card">
                     <div class="card-header bg-dark text-white d-flex justify-content-between">
                         <h5 class="mb-0"><i class="bi bi-list"></i> Relógios</h5>
@@ -154,40 +156,39 @@
                 </div>
             </div>
 
-            <!-- Tab: Import -->
+            <!-- Tab: Import Single Page -->
             <div class="tab-pane fade" id="tab-import">
                 <div class="card">
                     <div class="card-header bg-dark text-white">
                         <h5 class="mb-0"><i class="bi bi-cloud-download"></i> Importar de Sites de Leilão</h5>
                     </div>
                     <div class="card-body">
-                        <!-- Site Selection -->
                         <div class="mb-4">
                             <label class="form-label fw-bold">1. Selecione o site:</label>
                             <div class="d-flex flex-wrap gap-2" id="siteButtons"></div>
                         </div>
 
-                        <!-- Open Site Button -->
                         <div class="mb-4">
                             <label class="form-label fw-bold">2. Abra o site e copie o conteúdo:</label>
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-primary" id="openSiteBtn" onclick="openSelectedSite()">
-                                    <i class="bi bi-box-arrow-up-right"></i> Abrir Site em Nova Aba
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button class="btn btn-primary" onclick="openSelectedSite()">
+                                    <i class="bi bi-box-arrow-up-right"></i> Abrir Site
                                 </button>
-                                <span class="text-muted align-self-center">
-                                    Depois, selecione todo o texto (Ctrl+A / Cmd+A) e copie (Ctrl+C / Cmd+C)
-                                </span>
+                                <button class="btn btn-outline-primary" onclick="openAllPages()">
+                                    <i class="bi bi-collection"></i> Abrir Páginas 1-5
+                                </button>
                             </div>
+                            <small class="text-muted d-block mt-2">
+                                Na página, pressione <kbd>Cmd+A</kbd> e <kbd>Cmd+C</kbd> para copiar tudo
+                            </small>
                         </div>
 
-                        <!-- Paste Area -->
                         <div class="mb-4">
                             <label class="form-label fw-bold">3. Cole o conteúdo aqui:</label>
                             <textarea class="form-control" id="pasteArea" rows="8"
                                 placeholder="Cole aqui o texto copiado da página do leilão..."></textarea>
                         </div>
 
-                        <!-- Extract Button -->
                         <div class="d-flex gap-2">
                             <button class="btn btn-success btn-lg" onclick="extractFromPaste()">
                                 <i class="bi bi-magic"></i> Extrair Relógios
@@ -197,11 +198,21 @@
                             </button>
                         </div>
 
-                        <!-- Extraction Results -->
                         <div class="mt-4" id="extractionResults" style="display:none">
                             <div class="alert alert-success">
                                 <i class="bi bi-check-circle"></i> <span id="extractionCount">0</span> relógios encontrados!
                             </div>
+
+                            <!-- Detected Subpages -->
+                            <div class="mb-3" id="detectedLinksSection" style="display:none">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-link-45deg"></i> <strong><span id="linksCount">0</span> links de produtos detectados!</strong>
+                                    <button class="btn btn-sm btn-info ms-2" onclick="openDetectedLinks()">
+                                        Abrir Todos
+                                    </button>
+                                </div>
+                            </div>
+
                             <div class="table-responsive">
                                 <table class="table table-sm">
                                     <thead>
@@ -209,6 +220,7 @@
                                             <th><input type="checkbox" id="selectAllExtracted" onchange="toggleAllExtracted()"></th>
                                             <th>Descrição</th>
                                             <th>Marca</th>
+                                            <th>Material</th>
                                             <th>Preço</th>
                                         </tr>
                                     </thead>
@@ -221,22 +233,100 @@
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Instructions -->
-                <div class="card mt-4">
-                    <div class="card-header bg-light">
-                        <h6 class="mb-0"><i class="bi bi-info-circle"></i> Como usar</h6>
+            <!-- Tab: Batch Import (Multiple Pages) -->
+            <div class="tab-pane fade" id="tab-batch">
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0"><i class="bi bi-collection"></i> Importar Múltiplas Páginas</h5>
                     </div>
                     <div class="card-body">
-                        <ol class="mb-0">
-                            <li>Selecione um site de leilão na lista acima</li>
-                            <li>Clique em "Abrir Site em Nova Aba"</li>
-                            <li>Na página do leilão, pressione <kbd>Ctrl+A</kbd> (ou <kbd>Cmd+A</kbd> no Mac) para selecionar tudo</li>
-                            <li>Pressione <kbd>Ctrl+C</kbd> (ou <kbd>Cmd+C</kbd>) para copiar</li>
-                            <li>Volte aqui e cole no campo acima (<kbd>Ctrl+V</kbd> / <kbd>Cmd+V</kbd>)</li>
-                            <li>Clique em "Extrair Relógios"</li>
-                            <li>Revise os dados e importe os que desejar</li>
-                        </ol>
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            Cole o conteúdo de várias páginas de uma vez. Você pode copiar uma página, colar aqui,
+                            depois copiar outra página e colar novamente - os dados serão acumulados.
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Site selecionado:</label>
+                            <div class="d-flex flex-wrap gap-2" id="siteButtonsBatch"></div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">Cole o conteúdo das páginas:</label>
+                                <textarea class="form-control" id="batchPasteArea" rows="6"
+                                    placeholder="Cole aqui o conteúdo de cada página..."></textarea>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Páginas coletadas:</label>
+                                <div class="border rounded p-3 bg-light" style="min-height: 150px; max-height: 200px; overflow-y: auto;">
+                                    <div id="collectedPages">
+                                        <span class="text-muted">Nenhuma página coletada ainda</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 mb-4">
+                            <button class="btn btn-primary" onclick="addToBatch()">
+                                <i class="bi bi-plus-circle"></i> Adicionar à Lista
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="clearBatch()">
+                                <i class="bi bi-trash"></i> Limpar Tudo
+                            </button>
+                        </div>
+
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-0">Total acumulado: <span class="text-primary" id="batchTotal">0</span> relógios</h5>
+                                        <small class="text-muted">de <span id="batchPages">0</span> páginas</small>
+                                    </div>
+                                    <button class="btn btn-success btn-lg" onclick="importBatch()" id="importBatchBtn" disabled>
+                                        <i class="bi bi-download"></i> Importar Todos
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preview Table -->
+                        <div class="mt-4" id="batchPreview" style="display:none">
+                            <h6>Prévia dos dados coletados:</h6>
+                            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                <table class="table table-sm table-striped">
+                                    <thead class="sticky-top bg-white">
+                                        <tr>
+                                            <th>Página</th>
+                                            <th>Descrição</th>
+                                            <th>Marca</th>
+                                            <th>Preço</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="batchPreviewTable"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="bi bi-lightning"></i> Atalhos Rápidos</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">Abrir múltiplas páginas do site selecionado:</p>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button class="btn btn-outline-primary btn-sm" onclick="openPagesRange(1,3)">Páginas 1-3</button>
+                            <button class="btn btn-outline-primary btn-sm" onclick="openPagesRange(1,5)">Páginas 1-5</button>
+                            <button class="btn btn-outline-primary btn-sm" onclick="openPagesRange(1,10)">Páginas 1-10</button>
+                            <button class="btn btn-outline-primary btn-sm" onclick="openPagesRange(1,20)">Páginas 1-20</button>
+                        </div>
+                        <small class="text-muted d-block mt-2">
+                            Abre várias abas. Copie o conteúdo de cada uma e cole aqui.
+                        </small>
                     </div>
                 </div>
             </div>
@@ -251,12 +341,17 @@
                         </button>
                     </div>
                     <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Padrão de URL para paginação:</strong> Use <code>{page}</code> onde o número da página deve aparecer.
+                            <br>Exemplo: <code>https://site.com/relogios?page={page}</code>
+                        </div>
                         <div class="table-responsive">
                             <table class="table">
                                 <thead>
                                     <tr>
                                         <th>Nome</th>
-                                        <th>URL</th>
+                                        <th>URL Base</th>
                                         <th>Categoria</th>
                                         <th></th>
                                     </tr>
@@ -270,7 +365,7 @@
         </div>
     </main>
 
-    <!-- Add/Edit Watch Modal -->
+    <!-- Modals -->
     <div class="modal fade" id="addModal" tabindex="-1">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
@@ -307,25 +402,17 @@
                                 <label class="form-label">Material da Caixa</label>
                                 <select class="form-select" id="material">
                                     <option value="">Selecione</option>
-                                    <option>Aço</option>
-                                    <option>Aço e ouro</option>
-                                    <option>Ouro</option>
-                                    <option>Ouro rosa</option>
-                                    <option>Ouro branco</option>
-                                    <option>Titânio</option>
-                                    <option>Platina</option>
-                                    <option>Cerâmica</option>
+                                    <option>Aço</option><option>Aço e ouro</option><option>Ouro</option>
+                                    <option>Ouro rosa</option><option>Ouro branco</option><option>Titânio</option>
+                                    <option>Platina</option><option>Cerâmica</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Material Pulseira</label>
                                 <select class="form-select" id="braceletMaterial">
                                     <option value="">Selecione</option>
-                                    <option>Aço</option>
-                                    <option>Couro</option>
-                                    <option>Borracha</option>
-                                    <option>Ouro</option>
-                                    <option>Tecido</option>
+                                    <option>Aço</option><option>Couro</option><option>Borracha</option>
+                                    <option>Ouro</option><option>Tecido</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
@@ -360,7 +447,6 @@
         </div>
     </div>
 
-    <!-- View Watch Modal -->
     <div class="modal fade" id="viewModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -381,7 +467,6 @@
         </div>
     </div>
 
-    <!-- Add Site Modal -->
     <div class="modal fade" id="addSiteModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -397,6 +482,7 @@
                     <div class="mb-3">
                         <label class="form-label">URL da página de relógios *</label>
                         <input type="url" class="form-control" id="siteUrl" placeholder="https://www.exemplo.com/relogios">
+                        <small class="text-muted">Use <code>{page}</code> para indicar onde vai o número da página</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Categoria</label>
@@ -415,43 +501,58 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Database keys
+        // Database
         const DB_KEY = 'watchAuctionDB';
         const SITES_KEY = 'watchAuctionSites';
 
-        // Data
         let watches = JSON.parse(localStorage.getItem(DB_KEY)) || [];
         let sites = JSON.parse(localStorage.getItem(SITES_KEY)) || [
-            { id: '1', name: 'Leilões BR', url: 'https://www.leiloesbr.com.br/joalheria/relogios', category: 'Joalheria' },
-            { id: '2', name: 'Sothebys', url: 'https://www.sothebys.com/en/buy/watches', category: 'Luxo' },
-            { id: '3', name: 'Christies', url: 'https://www.christies.com/en/events/watches', category: 'Luxo' },
-            { id: '4', name: 'Mercado Livre', url: 'https://lista.mercadolivre.com.br/relogios', category: 'Marketplace' },
+            { id: '1', name: 'Leilões BR', url: 'https://www.leiloesbr.com.br/joalheria/relogios?p={page}', category: 'Joalheria' },
+            { id: '2', name: 'Sothebys', url: 'https://www.sothebys.com/en/buy/watches?page={page}', category: 'Luxo' },
+            { id: '3', name: 'Christies', url: 'https://www.christies.com/en/events/watches?page={page}', category: 'Luxo' },
+            { id: '4', name: 'Mercado Livre', url: 'https://lista.mercadolivre.com.br/relogios_Desde_{page}_NoIndex_True', category: 'Marketplace' },
         ];
         let selectedSiteId = sites[0]?.id;
         let currentViewId = null;
         let extractedWatches = [];
+        let detectedLinks = [];
+        let batchWatches = [];
+        let batchPageCount = 0;
 
-        // Known brands
+        // Known data
         const KNOWN_BRANDS = ['Rolex', 'Omega', 'Patek Philippe', 'Audemars Piguet', 'Cartier',
             'Tag Heuer', 'Breitling', 'IWC', 'Panerai', 'Hublot', 'Tudor', 'Longines',
             'Tissot', 'Seiko', 'Citizen', 'Chopard', 'Bulgari', 'Montblanc', 'Oris',
             'Vacheron Constantin', 'Jaeger-LeCoultre', 'Zenith', 'Rado', 'Hamilton',
-            'Technos', 'Orient', 'Casio', 'Invicta', 'Fossil', 'Michael Kors'];
+            'Technos', 'Orient', 'Casio', 'Invicta', 'Fossil', 'Michael Kors',
+            'A. Lange & Söhne', 'Blancpain', 'Girard-Perregaux', 'Ulysse Nardin',
+            'Richard Mille', 'Frank Muller', 'Piaget', 'Corum', 'Bell & Ross',
+            'Maurice Lacroix', 'Frederique Constant', 'Movado', 'Raymond Weil',
+            'Mido', 'Certina', 'Alpina', 'Baume & Mercier', 'Ebel', 'Concord'];
 
-        // Materials patterns
         const MATERIALS = {
-            'Ouro rosa': ['ouro rosa', 'rose gold', 'rosê'],
+            'Ouro rosa': ['ouro rosa', 'rose gold', 'rosê', 'everose'],
             'Ouro amarelo': ['ouro amarelo', 'yellow gold', 'ouro 18k', 'ouro 750'],
             'Ouro branco': ['ouro branco', 'white gold'],
-            'Aço e ouro': ['aço e ouro', 'steel and gold', 'aço/ouro', 'bicolor', 'two-tone'],
-            'Aço': ['aço', 'steel', 'aço inox', 'stainless'],
-            'Ouro': ['ouro', 'gold'],
+            'Aço e ouro': ['aço e ouro', 'steel and gold', 'aço/ouro', 'bicolor', 'two-tone', 'rolesor'],
+            'Aço': ['aço', 'steel', 'aço inox', 'stainless', 'inoxidável'],
+            'Ouro': ['ouro', 'gold', '18k', '750'],
             'Titânio': ['titânio', 'titanium'],
             'Platina': ['platina', 'platinum'],
             'Cerâmica': ['cerâmica', 'ceramic'],
+            'Bronze': ['bronze'],
+            'Prata': ['prata', 'silver'],
         };
 
-        // === Database Functions ===
+        const BRACELET_MATERIALS = {
+            'Aço': ['pulseira de aço', 'bracelete aço', 'jubilee', 'oyster', 'president'],
+            'Couro': ['couro', 'leather', 'crocodilo', 'jacaré', 'alligator'],
+            'Borracha': ['borracha', 'rubber', 'silicone', 'oysterflex'],
+            'Ouro': ['pulseira ouro', 'bracelete ouro'],
+            'Tecido': ['nato', 'nylon', 'tecido', 'canvas'],
+        };
+
+        // === Core Functions ===
         function saveDB() {
             localStorage.setItem(DB_KEY, JSON.stringify(watches));
             localStorage.setItem(SITES_KEY, JSON.stringify(sites));
@@ -467,7 +568,6 @@
             return 'R$ ' + parseFloat(value).toLocaleString('pt-BR', {minimumFractionDigits: 2});
         }
 
-        // === Stats & Filters ===
         function updateStats() {
             const total = watches.length;
             const brands = [...new Set(watches.map(w => w.brand).filter(b => b))].length;
@@ -485,7 +585,6 @@
 
             document.getElementById('filterBrand').innerHTML = '<option value="">Todas marcas</option>' +
                 brands.map(b => `<option>${b}</option>`).join('');
-
             document.getElementById('filterMaterial').innerHTML = '<option value="">Todos materiais</option>' +
                 materials.map(m => `<option>${m}</option>`).join('');
 
@@ -551,11 +650,9 @@
             document.getElementById('viewBody').innerHTML = `
                 <div class="row">
                     <div class="col-md-4 text-center mb-3">
-                        ${w.imageUrl ?
-                            `<img src="${w.imageUrl}" class="img-fluid rounded" style="max-height:200px">` :
+                        ${w.imageUrl ? `<img src="${w.imageUrl}" class="img-fluid rounded" style="max-height:200px">` :
                             `<div class="bg-light rounded d-flex align-items-center justify-content-center" style="height:150px">
-                                <i class="bi bi-watch text-muted" style="font-size:3rem"></i>
-                            </div>`}
+                                <i class="bi bi-watch text-muted" style="font-size:3rem"></i></div>`}
                     </div>
                     <div class="col-md-8">
                         <h4 class="text-success mb-3">${formatCurrency(w.price)}</h4>
@@ -570,13 +667,11 @@
                         </div>
                         <p class="mt-2"><strong>Especificações:</strong> ${w.specification || '-'}</p>
                     </div>
-                </div>
-            `;
+                </div>`;
 
             const sourceLink = document.getElementById('viewSourceLink');
             sourceLink.style.display = w.sourceUrl ? 'inline-block' : 'none';
             sourceLink.href = w.sourceUrl || '#';
-
             new bootstrap.Modal(document.getElementById('viewModal')).show();
         }
 
@@ -603,15 +698,13 @@
             document.getElementById('imageUrl').value = w.imageUrl || '';
             document.getElementById('sourceUrl').value = w.sourceUrl || '';
             document.getElementById('deleteBtn').style.display = 'block';
-
             new bootstrap.Modal(document.getElementById('addModal')).show();
         }
 
         function saveWatch() {
             const id = document.getElementById('watchId').value || Date.now().toString();
             const watch = {
-                id,
-                description: document.getElementById('description').value,
+                id, description: document.getElementById('description').value,
                 brand: document.getElementById('brand').value,
                 price: document.getElementById('price').value,
                 model: document.getElementById('model').value,
@@ -626,9 +719,7 @@
             };
 
             const idx = watches.findIndex(w => w.id === id);
-            if (idx >= 0) watches[idx] = watch;
-            else watches.push(watch);
-
+            if (idx >= 0) watches[idx] = watch; else watches.push(watch);
             saveDB();
             bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
         }
@@ -643,38 +734,40 @@
 
         // === Sites Management ===
         function renderSiteButtons() {
-            const container = document.getElementById('siteButtons');
-            container.innerHTML = sites.map(s => `
+            const html = sites.map(s => `
                 <button class="btn ${s.id === selectedSiteId ? 'btn-primary' : 'btn-outline-primary'} site-badge"
-                    onclick="selectSite('${s.id}')">
-                    <i class="bi bi-globe"></i> ${s.name}
-                </button>
+                    onclick="selectSite('${s.id}')"><i class="bi bi-globe"></i> ${s.name}</button>
             `).join('');
+            document.getElementById('siteButtons').innerHTML = html;
+            document.getElementById('siteButtonsBatch').innerHTML = html;
         }
 
         function renderSites() {
             document.getElementById('sitesTable').innerHTML = sites.map(s => `
                 <tr>
                     <td><strong>${s.name}</strong></td>
-                    <td><a href="${s.url}" target="_blank">${s.url.substring(0,50)}...</a></td>
+                    <td class="subpage-link"><a href="${s.url.replace('{page}', '1')}" target="_blank">${s.url}</a></td>
                     <td><span class="badge bg-secondary">${s.category || '-'}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteSite('${s.id}')">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
+                    <td><button class="btn btn-sm btn-outline-danger" onclick="deleteSite('${s.id}')"><i class="bi bi-trash"></i></button></td>
                 </tr>
             `).join('');
         }
 
-        function selectSite(id) {
-            selectedSiteId = id;
-            renderSiteButtons();
-        }
+        function selectSite(id) { selectedSiteId = id; renderSiteButtons(); }
 
         function openSelectedSite() {
             const site = sites.find(s => s.id === selectedSiteId);
-            if (site) window.open(site.url, '_blank');
+            if (site) window.open(site.url.replace('{page}', '1'), '_blank');
+        }
+
+        function openAllPages() { openPagesRange(1, 5); }
+
+        function openPagesRange(start, end) {
+            const site = sites.find(s => s.id === selectedSiteId);
+            if (!site) return;
+            for (let i = start; i <= end; i++) {
+                setTimeout(() => window.open(site.url.replace('{page}', i.toString()), '_blank'), (i - start) * 300);
+            }
         }
 
         function openAddSiteModal() {
@@ -688,12 +781,7 @@
             const name = document.getElementById('siteName').value.trim();
             const url = document.getElementById('siteUrl').value.trim();
             const category = document.getElementById('siteCategory').value.trim();
-
-            if (!name || !url) {
-                alert('Preencha nome e URL');
-                return;
-            }
-
+            if (!name || !url) { alert('Preencha nome e URL'); return; }
             sites.push({ id: Date.now().toString(), name, url, category });
             saveDB();
             bootstrap.Modal.getInstance(document.getElementById('addSiteModal')).hide();
@@ -706,15 +794,14 @@
             saveDB();
         }
 
-        // === Text Extraction ===
+        // === Enhanced Text Extraction ===
         function extractFromPaste() {
             const text = document.getElementById('pasteArea').value;
-            if (!text.trim()) {
-                alert('Cole o conteúdo da página primeiro');
-                return;
-            }
+            if (!text.trim()) { alert('Cole o conteúdo da página primeiro'); return; }
 
-            extractedWatches = parseWatchesFromText(text);
+            const result = parseWatchesFromText(text);
+            extractedWatches = result.watches;
+            detectedLinks = result.links;
 
             if (extractedWatches.length === 0) {
                 alert('Nenhum relógio encontrado. Tente copiar mais conteúdo da página.');
@@ -727,68 +814,138 @@
                     <td><input type="checkbox" class="extracted-check" data-index="${i}" checked></td>
                     <td>${w.description || '-'}</td>
                     <td>${w.brand || '-'}</td>
+                    <td><span class="badge bg-secondary">${w.material || '-'}</span></td>
                     <td>${formatCurrency(w.price)}</td>
                 </tr>
             `).join('');
+
+            // Show detected links
+            if (detectedLinks.length > 0) {
+                document.getElementById('linksCount').textContent = detectedLinks.length;
+                document.getElementById('detectedLinksSection').style.display = 'block';
+            } else {
+                document.getElementById('detectedLinksSection').style.display = 'none';
+            }
+
             document.getElementById('extractionResults').style.display = 'block';
             document.getElementById('selectAllExtracted').checked = true;
         }
 
         function parseWatchesFromText(text) {
             const results = [];
+            const links = [];
             const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+            const site = sites.find(s => s.id === selectedSiteId);
+            const baseUrl = site ? new URL(site.url.replace('{page}', '1')).origin : '';
 
-            // Price pattern
-            const pricePattern = /R\$\s*([\d.,]+)/gi;
+            // Extract URLs from text
+            const urlPattern = /https?:\/\/[^\s<>"{}|\\^`\[\]]+/gi;
+            const foundUrls = text.match(urlPattern) || [];
+            foundUrls.forEach(url => {
+                if (url.includes('lote') || url.includes('product') || url.includes('item') ||
+                    url.includes('lot') || url.includes('relogio') || url.includes('watch')) {
+                    links.push(url);
+                }
+            });
 
-            // Find lines with prices
+            // Price patterns
+            const pricePatterns = [
+                /R\$\s*([\d.,]+)/gi,
+                /(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)\s*(?:reais|BRL)/gi,
+                /Lance\s*(?:atual|mínimo)?[:\s]*([\d.,]+)/gi,
+                /USD\s*([\d.,]+)/gi,
+                /EUR\s*([\d.,]+)/gi,
+            ];
+
             let currentItem = null;
+            let contextLines = [];
 
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i];
-                const priceMatch = line.match(pricePattern);
+                const lower = line.toLowerCase();
 
-                // Check if line contains watch-related keywords
-                const isWatchLine = KNOWN_BRANDS.some(b => line.toLowerCase().includes(b.toLowerCase())) ||
-                    /rel[oó]gio|watch|cronógrafo|autom[aá]tico/i.test(line);
+                // Check if line contains watch-related content
+                const hasBrand = KNOWN_BRANDS.some(b => lower.includes(b.toLowerCase()));
+                const hasWatchKeyword = /rel[oó]gio|watch|cronógrafo|chronograph|autom[aá]tico|automatic|lote|lot\s*\d/i.test(line);
+                const hasLotNumber = /lote\s*\d+|lot\s*\d+/i.test(line);
 
-                if (isWatchLine || priceMatch) {
-                    if (priceMatch && currentItem) {
-                        // Add price to current item
-                        const priceStr = priceMatch[0].replace(/[R$\s]/g, '').replace('.', '').replace(',', '.');
-                        currentItem.price = parseFloat(priceStr) || 0;
-                        results.push(currentItem);
-                        currentItem = null;
-                    } else if (isWatchLine) {
-                        // Start new item
-                        currentItem = {
-                            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-                            description: line.substring(0, 200),
-                            brand: extractBrand(line),
-                            material: extractMaterial(line),
-                            year: extractYear(line),
-                            price: 0,
-                            sourceUrl: sites.find(s => s.id === selectedSiteId)?.url || ''
-                        };
-
-                        // Check if price is in same line
-                        if (priceMatch) {
-                            const priceStr = priceMatch[0].replace(/[R$\s]/g, '').replace('.', '').replace(',', '.');
-                            currentItem.price = parseFloat(priceStr) || 0;
-                            results.push(currentItem);
-                            currentItem = null;
-                        }
+                // Find price in line
+                let price = 0;
+                for (const pattern of pricePatterns) {
+                    pattern.lastIndex = 0;
+                    const match = pattern.exec(line);
+                    if (match) {
+                        const priceStr = match[1].replace(/\./g, '').replace(',', '.');
+                        price = parseFloat(priceStr) || 0;
+                        break;
                     }
+                }
+
+                if (hasBrand || hasWatchKeyword || hasLotNumber) {
+                    // Save previous item if exists
+                    if (currentItem && currentItem.description) {
+                        results.push(currentItem);
+                    }
+
+                    // Start new item
+                    const fullContext = [line, ...contextLines.slice(-2)].join(' ');
+                    currentItem = {
+                        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                        description: line.substring(0, 250),
+                        brand: extractBrand(fullContext),
+                        model: extractModel(fullContext),
+                        material: extractMaterial(fullContext),
+                        braceletMaterial: extractBraceletMaterial(fullContext),
+                        year: extractYear(fullContext),
+                        specification: extractSpecification(fullContext),
+                        weight: extractWeight(fullContext),
+                        price: price,
+                        sourceUrl: site?.url.replace('{page}', '1') || ''
+                    };
+                    contextLines = [];
+                } else if (currentItem) {
+                    // Add context to current item
+                    contextLines.push(line);
+
+                    // Update price if found
+                    if (price > 0 && currentItem.price === 0) {
+                        currentItem.price = price;
+                    }
+
+                    // Update other fields from context
+                    if (!currentItem.brand) currentItem.brand = extractBrand(line);
+                    if (!currentItem.material) currentItem.material = extractMaterial(line);
+                    if (!currentItem.year) currentItem.year = extractYear(line);
                 }
             }
 
-            return results;
+            // Don't forget last item
+            if (currentItem && currentItem.description) {
+                results.push(currentItem);
+            }
+
+            return { watches: results, links: [...new Set(links)] };
         }
 
         function extractBrand(text) {
             const lower = text.toLowerCase();
             for (const brand of KNOWN_BRANDS) {
                 if (lower.includes(brand.toLowerCase())) return brand;
+            }
+            return '';
+        }
+
+        function extractModel(text) {
+            const patterns = [
+                /modelo[:\s]+([^\n,\.]+)/i,
+                /ref\.?\s*[:\s]*([A-Z0-9\-\.]+)/i,
+                /referência[:\s]+([^\n,\.]+)/i,
+                /\b([A-Z]{0,3}\d{3,6}[A-Z]{0,4}(?:\/\d{1,2}[A-Z]?)?)\b/,
+                /(Submariner|Daytona|Datejust|GMT-Master|Explorer|Sea-Dweller|Speedmaster|Seamaster|Nautilus|Royal Oak|Calatrava)/i,
+            ];
+            for (const pattern of patterns) {
+                const match = text.match(pattern);
+                if (match) return match[1].trim();
             }
             return '';
         }
@@ -801,9 +958,44 @@
             return '';
         }
 
+        function extractBraceletMaterial(text) {
+            const lower = text.toLowerCase();
+            for (const [name, patterns] of Object.entries(BRACELET_MATERIALS)) {
+                if (patterns.some(p => lower.includes(p))) return name;
+            }
+            return '';
+        }
+
         function extractYear(text) {
-            const match = text.match(/\b(19[0-9]{2}|20[0-2][0-9])\b/);
+            const match = text.match(/\b(19[5-9][0-9]|20[0-2][0-9])\b/);
             return match ? parseInt(match[1]) : null;
+        }
+
+        function extractSpecification(text) {
+            const specs = [];
+            if (/autom[aá]tico|automatic/i.test(text)) specs.push('Automático');
+            if (/manual|corda manual/i.test(text)) specs.push('Corda manual');
+            if (/quartz|quartzo/i.test(text)) specs.push('Quartzo');
+            if (/cron[oó]grafo|chronograph/i.test(text)) specs.push('Cronógrafo');
+            const size = text.match(/(\d{2,3})\s*mm/i);
+            if (size) specs.push(size[0]);
+            return specs.join(', ');
+        }
+
+        function extractWeight(text) {
+            const match = text.match(/peso[:\s]+(\d+[,.]?\d*)\s*(g|gr|gramas|kg)/i) ||
+                          text.match(/(\d+[,.]?\d*)\s*(g|gramas)\b/i);
+            if (match) return match[1].replace(',', '.') + 'g';
+            return '';
+        }
+
+        function openDetectedLinks() {
+            detectedLinks.slice(0, 10).forEach((url, i) => {
+                setTimeout(() => window.open(url, '_blank'), i * 300);
+            });
+            if (detectedLinks.length > 10) {
+                alert(`Abrindo os primeiros 10 links. Total detectado: ${detectedLinks.length}`);
+            }
         }
 
         function toggleAllExtracted() {
@@ -814,35 +1006,88 @@
         function importSelected() {
             const selected = [];
             document.querySelectorAll('.extracted-check:checked').forEach(cb => {
-                const idx = parseInt(cb.dataset.index);
-                selected.push(extractedWatches[idx]);
+                selected.push(extractedWatches[parseInt(cb.dataset.index)]);
             });
-
-            if (selected.length === 0) {
-                alert('Selecione pelo menos um item');
-                return;
-            }
+            if (selected.length === 0) { alert('Selecione pelo menos um item'); return; }
 
             watches.push(...selected);
             saveDB();
-
             alert(`${selected.length} relógio(s) importado(s) com sucesso!`);
             document.getElementById('pasteArea').value = '';
             document.getElementById('extractionResults').style.display = 'none';
+            document.querySelector('[data-bs-target="#tab-search"]').click();
+        }
 
-            // Switch to search tab
+        // === Batch Import ===
+        function addToBatch() {
+            const text = document.getElementById('batchPasteArea').value;
+            if (!text.trim()) { alert('Cole o conteúdo de uma página primeiro'); return; }
+
+            const result = parseWatchesFromText(text);
+            if (result.watches.length === 0) {
+                alert('Nenhum relógio encontrado nesta página');
+                return;
+            }
+
+            batchWatches.push(...result.watches);
+            batchPageCount++;
+
+            updateBatchUI();
+            document.getElementById('batchPasteArea').value = '';
+            alert(`${result.watches.length} relógios adicionados da página ${batchPageCount}`);
+        }
+
+        function updateBatchUI() {
+            document.getElementById('batchTotal').textContent = batchWatches.length;
+            document.getElementById('batchPages').textContent = batchPageCount;
+            document.getElementById('importBatchBtn').disabled = batchWatches.length === 0;
+
+            // Update collected pages list
+            const pagesDiv = document.getElementById('collectedPages');
+            if (batchWatches.length > 0) {
+                pagesDiv.innerHTML = `<span class="badge bg-success me-1">${batchPageCount} página(s)</span>
+                    <span class="badge bg-primary">${batchWatches.length} relógios</span>`;
+            } else {
+                pagesDiv.innerHTML = '<span class="text-muted">Nenhuma página coletada ainda</span>';
+            }
+
+            // Update preview
+            if (batchWatches.length > 0) {
+                document.getElementById('batchPreview').style.display = 'block';
+                document.getElementById('batchPreviewTable').innerHTML = batchWatches.slice(0, 50).map((w, i) => `
+                    <tr>
+                        <td><span class="page-badge badge bg-light text-dark">P${Math.floor(i / 10) + 1}</span></td>
+                        <td>${(w.description || '').substring(0, 40)}...</td>
+                        <td>${w.brand || '-'}</td>
+                        <td>${formatCurrency(w.price)}</td>
+                    </tr>
+                `).join('');
+            } else {
+                document.getElementById('batchPreview').style.display = 'none';
+            }
+        }
+
+        function clearBatch() {
+            if (batchWatches.length > 0 && !confirm('Limpar todos os dados coletados?')) return;
+            batchWatches = [];
+            batchPageCount = 0;
+            updateBatchUI();
+        }
+
+        function importBatch() {
+            if (batchWatches.length === 0) return;
+            watches.push(...batchWatches);
+            saveDB();
+            alert(`${batchWatches.length} relógios importados de ${batchPageCount} páginas!`);
+            clearBatch();
             document.querySelector('[data-bs-target="#tab-search"]').click();
         }
 
         // === Export ===
         function exportData(format) {
-            if (watches.length === 0) {
-                alert('Nenhum dado para exportar');
-                return;
-            }
+            if (watches.length === 0) { alert('Nenhum dado para exportar'); return; }
 
             let content, filename, type;
-
             if (format === 'json') {
                 content = JSON.stringify(watches, null, 2);
                 filename = 'relogios.json';
@@ -859,12 +1104,10 @@
             }
 
             const blob = new Blob([content], {type});
-            const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url;
+            a.href = URL.createObjectURL(blob);
             a.download = filename;
             a.click();
-            URL.revokeObjectURL(url);
         }
 
         // === Initialize ===
