@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch Auction - Pesquisa de Leilões</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root { --primary: #2c3e50; --accent: #3498db; }
+        body { background: #f8f9fa; min-height: 100vh; }
+        .navbar { box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .card { border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
+        .table tbody tr { cursor: pointer; transition: background 0.2s; }
+        .table tbody tr:hover { background: #e3f2fd !important; }
+        .stat-card { border-radius: 12px; transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-2px); }
+        .modal-xl { max-width: 900px; }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="bi bi-watch"></i> Watch Auction</a>
+            <div class="navbar-nav ms-auto">
+                <button class="btn btn-outline-light btn-sm me-2" onclick="exportData('csv')">
+                    <i class="bi bi-filetype-csv"></i> CSV
+                </button>
+                <button class="btn btn-outline-light btn-sm" onclick="exportData('json')">
+                    <i class="bi bi-filetype-json"></i> JSON
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container py-4">
+        <!-- Stats -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-2">
+                <div class="card stat-card bg-primary text-white">
+                    <div class="card-body">
+                        <h6><i class="bi bi-watch"></i> Total</h6>
+                        <h3 id="stat-total">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-2">
+                <div class="card stat-card bg-success text-white">
+                    <div class="card-body">
+                        <h6><i class="bi bi-tags"></i> Marcas</h6>
+                        <h3 id="stat-brands">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-2">
+                <div class="card stat-card bg-info text-white">
+                    <div class="card-body">
+                        <h6><i class="bi bi-currency-dollar"></i> Preço Médio</h6>
+                        <h3 id="stat-avg">R$ 0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-2">
+                <div class="card stat-card bg-warning text-dark">
+                    <div class="card-body">
+                        <h6><i class="bi bi-plus-circle"></i> Adicionar</h6>
+                        <button class="btn btn-dark btn-sm w-100 mt-1" data-bs-toggle="modal" data-bs-target="#addModal">
+                            <i class="bi bi-plus"></i> Novo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search -->
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="bi bi-search"></i> Filtros de Pesquisa</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" id="searchQuery" placeholder="Buscar..." onkeyup="filterWatches()">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" id="filterBrand" onchange="filterWatches()">
+                            <option value="">Todas marcas</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" id="filterMaterial" onchange="filterWatches()">
+                            <option value="">Todos materiais</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" class="form-control" id="minPrice" placeholder="Preço min" onchange="filterWatches()">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" class="form-control" id="maxPrice" placeholder="Preço max" onchange="filterWatches()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="card">
+            <div class="card-header bg-dark text-white d-flex justify-content-between">
+                <h5 class="mb-0"><i class="bi bi-list"></i> Relógios</h5>
+                <span class="badge bg-light text-dark" id="resultCount">0</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Marca</th>
+                            <th>Modelo</th>
+                            <th>Material</th>
+                            <th>Ano</th>
+                            <th class="text-end">Preço</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="watchesTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add/Edit Modal -->
+    <div class="modal fade" id="addModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="bi bi-watch"></i> <span id="modalTitle">Adicionar Relógio</span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="watchForm">
+                        <input type="hidden" id="watchId">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Descrição Geral *</label>
+                                <input type="text" class="form-control" id="description" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Marca *</label>
+                                <input type="text" class="form-control" id="brand" required list="brandsList">
+                                <datalist id="brandsList"></datalist>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Preço (R$) *</label>
+                                <input type="number" class="form-control" id="price" step="0.01" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Modelo</label>
+                                <input type="text" class="form-control" id="model">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Ano</label>
+                                <input type="number" class="form-control" id="year" min="1900" max="2030">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Material da Caixa</label>
+                                <select class="form-select" id="material">
+                                    <option value="">Selecione</option>
+                                    <option>Aço</option>
+                                    <option>Aço e ouro</option>
+                                    <option>Ouro</option>
+                                    <option>Ouro rosa</option>
+                                    <option>Ouro branco</option>
+                                    <option>Titânio</option>
+                                    <option>Platina</option>
+                                    <option>Cerâmica</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Material Pulseira</label>
+                                <select class="form-select" id="braceletMaterial">
+                                    <option value="">Selecione</option>
+                                    <option>Aço</option>
+                                    <option>Couro</option>
+                                    <option>Borracha</option>
+                                    <option>Ouro</option>
+                                    <option>Tecido</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Peso</label>
+                                <input type="text" class="form-control" id="weight" placeholder="ex: 150g">
+                            </div>
+                            <div class="col-md-9">
+                                <label class="form-label">Especificações</label>
+                                <input type="text" class="form-control" id="specification" placeholder="ex: Automático, Cronógrafo, 42mm">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">URL da Imagem</label>
+                                <input type="url" class="form-control" id="imageUrl" placeholder="https://...">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">URL do Leilão</label>
+                                <input type="url" class="form-control" id="sourceUrl" placeholder="https://...">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger me-auto" id="deleteBtn" style="display:none" onclick="deleteWatch()">
+                        <i class="bi bi-trash"></i> Excluir
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveWatch()">
+                        <i class="bi bi-check"></i> Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Modal -->
+    <div class="modal fade" id="viewModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="viewTitle">Detalhes</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="viewBody"></div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-primary" onclick="editCurrentWatch()">
+                        <i class="bi bi-pencil"></i> Editar
+                    </button>
+                    <a class="btn btn-primary" id="viewSourceLink" href="#" target="_blank">
+                        <i class="bi bi-box-arrow-up-right"></i> Ver no site
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Database in localStorage
+        const DB_KEY = 'watchAuctionDB';
+        let watches = JSON.parse(localStorage.getItem(DB_KEY)) || [];
+        let currentViewId = null;
+
+        // Known brands for autocomplete
+        const KNOWN_BRANDS = ['Rolex', 'Omega', 'Patek Philippe', 'Audemars Piguet', 'Cartier',
+            'Tag Heuer', 'Breitling', 'IWC', 'Panerai', 'Hublot', 'Tudor', 'Longines',
+            'Tissot', 'Seiko', 'Citizen', 'Chopard', 'Bulgari', 'Montblanc', 'Oris'];
+
+        function saveDB() {
+            localStorage.setItem(DB_KEY, JSON.stringify(watches));
+            updateStats();
+            updateFilters();
+            filterWatches();
+        }
+
+        function formatCurrency(value) {
+            if (!value) return 'N/A';
+            return 'R$ ' + parseFloat(value).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        }
+
+        function updateStats() {
+            const total = watches.length;
+            const brands = [...new Set(watches.map(w => w.brand).filter(b => b))].length;
+            const prices = watches.map(w => parseFloat(w.price)).filter(p => p > 0);
+            const avg = prices.length ? prices.reduce((a,b) => a+b, 0) / prices.length : 0;
+
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-brands').textContent = brands;
+            document.getElementById('stat-avg').textContent = formatCurrency(avg);
+        }
+
+        function updateFilters() {
+            const brands = [...new Set(watches.map(w => w.brand).filter(b => b))].sort();
+            const materials = [...new Set(watches.map(w => w.material).filter(m => m))].sort();
+
+            const brandSelect = document.getElementById('filterBrand');
+            const materialSelect = document.getElementById('filterMaterial');
+            const brandsList = document.getElementById('brandsList');
+
+            brandSelect.innerHTML = '<option value="">Todas marcas</option>' +
+                brands.map(b => `<option>${b}</option>`).join('');
+
+            materialSelect.innerHTML = '<option value="">Todos materiais</option>' +
+                materials.map(m => `<option>${m}</option>`).join('');
+
+            const allBrands = [...new Set([...KNOWN_BRANDS, ...brands])].sort();
+            brandsList.innerHTML = allBrands.map(b => `<option value="${b}">`).join('');
+        }
+
+        function filterWatches() {
+            const query = document.getElementById('searchQuery').value.toLowerCase();
+            const brand = document.getElementById('filterBrand').value;
+            const material = document.getElementById('filterMaterial').value;
+            const minPrice = parseFloat(document.getElementById('minPrice').value) || 0;
+            const maxPrice = parseFloat(document.getElementById('maxPrice').value) || Infinity;
+
+            const filtered = watches.filter(w => {
+                const matchQuery = !query ||
+                    (w.description || '').toLowerCase().includes(query) ||
+                    (w.brand || '').toLowerCase().includes(query) ||
+                    (w.model || '').toLowerCase().includes(query);
+                const matchBrand = !brand || w.brand === brand;
+                const matchMaterial = !material || w.material === material;
+                const price = parseFloat(w.price) || 0;
+                const matchPrice = price >= minPrice && price <= maxPrice;
+                return matchQuery && matchBrand && matchMaterial && matchPrice;
+            });
+
+            renderTable(filtered);
+            document.getElementById('resultCount').textContent = filtered.length;
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('watchesTable');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Nenhum relógio encontrado</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.map(w => `
+                <tr onclick="viewWatch('${w.id}')">
+                    <td><strong>${w.brand || '-'}</strong></td>
+                    <td>${w.model || w.description?.substring(0,30) || '-'}</td>
+                    <td><span class="badge bg-secondary">${w.material || '-'}</span></td>
+                    <td>${w.year || '-'}</td>
+                    <td class="text-end text-success fw-bold">${formatCurrency(w.price)}</td>
+                    <td><i class="bi bi-chevron-right text-muted"></i></td>
+                </tr>
+            `).join('');
+        }
+
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = 'Adicionar Relógio';
+            document.getElementById('watchForm').reset();
+            document.getElementById('watchId').value = '';
+            document.getElementById('deleteBtn').style.display = 'none';
+        }
+
+        function viewWatch(id) {
+            const w = watches.find(x => x.id === id);
+            if (!w) return;
+            currentViewId = id;
+
+            document.getElementById('viewTitle').textContent = `${w.brand || ''} ${w.model || ''}`.trim() || 'Detalhes';
+            document.getElementById('viewBody').innerHTML = `
+                <div class="row">
+                    <div class="col-md-4 text-center mb-3">
+                        ${w.imageUrl ?
+                            `<img src="${w.imageUrl}" class="img-fluid rounded" style="max-height:200px">` :
+                            `<div class="bg-light rounded d-flex align-items-center justify-content-center" style="height:150px">
+                                <i class="bi bi-watch text-muted" style="font-size:3rem"></i>
+                            </div>`
+                        }
+                    </div>
+                    <div class="col-md-8">
+                        <h4 class="text-success mb-3">${formatCurrency(w.price)}</h4>
+                        <p><strong>Descrição:</strong> ${w.description || '-'}</p>
+                        <div class="row">
+                            <div class="col-6"><strong>Marca:</strong> ${w.brand || '-'}</div>
+                            <div class="col-6"><strong>Modelo:</strong> ${w.model || '-'}</div>
+                            <div class="col-6"><strong>Ano:</strong> ${w.year || '-'}</div>
+                            <div class="col-6"><strong>Material:</strong> ${w.material || '-'}</div>
+                            <div class="col-6"><strong>Pulseira:</strong> ${w.braceletMaterial || '-'}</div>
+                            <div class="col-6"><strong>Peso:</strong> ${w.weight || '-'}</div>
+                        </div>
+                        <p class="mt-2"><strong>Especificações:</strong> ${w.specification || '-'}</p>
+                    </div>
+                </div>
+            `;
+
+            const sourceLink = document.getElementById('viewSourceLink');
+            if (w.sourceUrl) {
+                sourceLink.href = w.sourceUrl;
+                sourceLink.style.display = 'inline-block';
+            } else {
+                sourceLink.style.display = 'none';
+            }
+
+            new bootstrap.Modal(document.getElementById('viewModal')).show();
+        }
+
+        function editCurrentWatch() {
+            bootstrap.Modal.getInstance(document.getElementById('viewModal')).hide();
+            editWatch(currentViewId);
+        }
+
+        function editWatch(id) {
+            const w = watches.find(x => x.id === id);
+            if (!w) return;
+
+            document.getElementById('modalTitle').textContent = 'Editar Relógio';
+            document.getElementById('watchId').value = w.id;
+            document.getElementById('description').value = w.description || '';
+            document.getElementById('brand').value = w.brand || '';
+            document.getElementById('price').value = w.price || '';
+            document.getElementById('model').value = w.model || '';
+            document.getElementById('year').value = w.year || '';
+            document.getElementById('material').value = w.material || '';
+            document.getElementById('braceletMaterial').value = w.braceletMaterial || '';
+            document.getElementById('weight').value = w.weight || '';
+            document.getElementById('specification').value = w.specification || '';
+            document.getElementById('imageUrl').value = w.imageUrl || '';
+            document.getElementById('sourceUrl').value = w.sourceUrl || '';
+            document.getElementById('deleteBtn').style.display = 'block';
+
+            new bootstrap.Modal(document.getElementById('addModal')).show();
+        }
+
+        function saveWatch() {
+            const id = document.getElementById('watchId').value || Date.now().toString();
+            const watch = {
+                id,
+                description: document.getElementById('description').value,
+                brand: document.getElementById('brand').value,
+                price: document.getElementById('price').value,
+                model: document.getElementById('model').value,
+                year: document.getElementById('year').value,
+                material: document.getElementById('material').value,
+                braceletMaterial: document.getElementById('braceletMaterial').value,
+                weight: document.getElementById('weight').value,
+                specification: document.getElementById('specification').value,
+                imageUrl: document.getElementById('imageUrl').value,
+                sourceUrl: document.getElementById('sourceUrl').value,
+                updatedAt: new Date().toISOString()
+            };
+
+            const existingIndex = watches.findIndex(w => w.id === id);
+            if (existingIndex >= 0) {
+                watches[existingIndex] = watch;
+            } else {
+                watches.push(watch);
+            }
+
+            saveDB();
+            bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
+        }
+
+        function deleteWatch() {
+            const id = document.getElementById('watchId').value;
+            if (!id || !confirm('Tem certeza que deseja excluir?')) return;
+            watches = watches.filter(w => w.id !== id);
+            saveDB();
+            bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
+        }
+
+        function exportData(format) {
+            if (watches.length === 0) {
+                alert('Nenhum dado para exportar');
+                return;
+            }
+
+            let content, filename, type;
+
+            if (format === 'json') {
+                content = JSON.stringify(watches, null, 2);
+                filename = 'relogios.json';
+                type = 'application/json';
+            } else {
+                const headers = ['Descrição','Marca','Modelo','Ano','Material','Pulseira','Peso','Especificações','Preço','URL'];
+                const rows = watches.map(w => [
+                    w.description, w.brand, w.model, w.year, w.material,
+                    w.braceletMaterial, w.weight, w.specification, w.price, w.sourceUrl
+                ].map(v => `"${(v || '').toString().replace(/"/g, '""')}"`).join(','));
+                content = [headers.join(','), ...rows].join('\n');
+                filename = 'relogios.csv';
+                type = 'text/csv';
+            }
+
+            const blob = new Blob([content], {type});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialize
+        document.getElementById('addModal').addEventListener('show.bs.modal', function(e) {
+            if (!document.getElementById('watchId').value) openAddModal();
+        });
+
+        updateStats();
+        updateFilters();
+        filterWatches();
+    </script>
+</body>
+</html>
