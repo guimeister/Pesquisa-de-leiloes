@@ -17,6 +17,10 @@
         .stat-card { border-radius: 12px; transition: transform 0.2s; }
         .stat-card:hover { transform: translateY(-2px); }
         .modal-xl { max-width: 900px; }
+        .site-badge { cursor: pointer; transition: all 0.2s; }
+        .site-badge:hover { transform: scale(1.05); }
+        .site-badge.active { ring: 2px solid #0d6efd; }
+        .nav-pills .nav-link.active { background-color: #2c3e50; }
     </style>
 </head>
 <body>
@@ -36,99 +40,237 @@
     </nav>
 
     <main class="container py-4">
-        <!-- Stats -->
-        <div class="row mb-4">
-            <div class="col-md-3 mb-2">
-                <div class="card stat-card bg-primary text-white">
+        <!-- Tabs -->
+        <ul class="nav nav-pills mb-4" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-search">
+                    <i class="bi bi-search"></i> Pesquisar
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-import">
+                    <i class="bi bi-cloud-download"></i> Importar de Sites
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-sites">
+                    <i class="bi bi-gear"></i> Configurar Sites
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- Tab: Search -->
+            <div class="tab-pane fade show active" id="tab-search">
+                <!-- Stats -->
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-2">
+                        <div class="card stat-card bg-primary text-white">
+                            <div class="card-body">
+                                <h6><i class="bi bi-watch"></i> Total</h6>
+                                <h3 id="stat-total">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <div class="card stat-card bg-success text-white">
+                            <div class="card-body">
+                                <h6><i class="bi bi-tags"></i> Marcas</h6>
+                                <h3 id="stat-brands">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <div class="card stat-card bg-info text-white">
+                            <div class="card-body">
+                                <h6><i class="bi bi-currency-dollar"></i> Preço Médio</h6>
+                                <h3 id="stat-avg">R$ 0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <div class="card stat-card bg-warning text-dark">
+                            <div class="card-body">
+                                <h6><i class="bi bi-plus-circle"></i> Adicionar</h6>
+                                <button class="btn btn-dark btn-sm w-100 mt-1" data-bs-toggle="modal" data-bs-target="#addModal">
+                                    <i class="bi bi-plus"></i> Novo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search Filters -->
+                <div class="card mb-4">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0"><i class="bi bi-search"></i> Filtros de Pesquisa</h5>
+                    </div>
                     <div class="card-body">
-                        <h6><i class="bi bi-watch"></i> Total</h6>
-                        <h3 id="stat-total">0</h3>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" id="searchQuery" placeholder="Buscar..." onkeyup="filterWatches()">
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select" id="filterBrand" onchange="filterWatches()">
+                                    <option value="">Todas marcas</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select" id="filterMaterial" onchange="filterWatches()">
+                                    <option value="">Todos materiais</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <input type="number" class="form-control" id="minPrice" placeholder="Preço min" onchange="filterWatches()">
+                            </div>
+                            <div class="col-md-2">
+                                <input type="number" class="form-control" id="maxPrice" placeholder="Preço max" onchange="filterWatches()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results -->
+                <div class="card">
+                    <div class="card-header bg-dark text-white d-flex justify-content-between">
+                        <h5 class="mb-0"><i class="bi bi-list"></i> Relógios</h5>
+                        <span class="badge bg-light text-dark" id="resultCount">0</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Marca</th>
+                                    <th>Modelo</th>
+                                    <th>Material</th>
+                                    <th>Ano</th>
+                                    <th class="text-end">Preço</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="watchesTable"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3 mb-2">
-                <div class="card stat-card bg-success text-white">
+
+            <!-- Tab: Import -->
+            <div class="tab-pane fade" id="tab-import">
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0"><i class="bi bi-cloud-download"></i> Importar de Sites de Leilão</h5>
+                    </div>
                     <div class="card-body">
-                        <h6><i class="bi bi-tags"></i> Marcas</h6>
-                        <h3 id="stat-brands">0</h3>
+                        <!-- Site Selection -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">1. Selecione o site:</label>
+                            <div class="d-flex flex-wrap gap-2" id="siteButtons"></div>
+                        </div>
+
+                        <!-- Open Site Button -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">2. Abra o site e copie o conteúdo:</label>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-primary" id="openSiteBtn" onclick="openSelectedSite()">
+                                    <i class="bi bi-box-arrow-up-right"></i> Abrir Site em Nova Aba
+                                </button>
+                                <span class="text-muted align-self-center">
+                                    Depois, selecione todo o texto (Ctrl+A / Cmd+A) e copie (Ctrl+C / Cmd+C)
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Paste Area -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">3. Cole o conteúdo aqui:</label>
+                            <textarea class="form-control" id="pasteArea" rows="8"
+                                placeholder="Cole aqui o texto copiado da página do leilão..."></textarea>
+                        </div>
+
+                        <!-- Extract Button -->
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-success btn-lg" onclick="extractFromPaste()">
+                                <i class="bi bi-magic"></i> Extrair Relógios
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="document.getElementById('pasteArea').value=''">
+                                <i class="bi bi-trash"></i> Limpar
+                            </button>
+                        </div>
+
+                        <!-- Extraction Results -->
+                        <div class="mt-4" id="extractionResults" style="display:none">
+                            <div class="alert alert-success">
+                                <i class="bi bi-check-circle"></i> <span id="extractionCount">0</span> relógios encontrados!
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th><input type="checkbox" id="selectAllExtracted" onchange="toggleAllExtracted()"></th>
+                                            <th>Descrição</th>
+                                            <th>Marca</th>
+                                            <th>Preço</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="extractedTable"></tbody>
+                                </table>
+                            </div>
+                            <button class="btn btn-primary" onclick="importSelected()">
+                                <i class="bi bi-download"></i> Importar Selecionados
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instructions -->
+                <div class="card mt-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="bi bi-info-circle"></i> Como usar</h6>
+                    </div>
+                    <div class="card-body">
+                        <ol class="mb-0">
+                            <li>Selecione um site de leilão na lista acima</li>
+                            <li>Clique em "Abrir Site em Nova Aba"</li>
+                            <li>Na página do leilão, pressione <kbd>Ctrl+A</kbd> (ou <kbd>Cmd+A</kbd> no Mac) para selecionar tudo</li>
+                            <li>Pressione <kbd>Ctrl+C</kbd> (ou <kbd>Cmd+C</kbd>) para copiar</li>
+                            <li>Volte aqui e cole no campo acima (<kbd>Ctrl+V</kbd> / <kbd>Cmd+V</kbd>)</li>
+                            <li>Clique em "Extrair Relógios"</li>
+                            <li>Revise os dados e importe os que desejar</li>
+                        </ol>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3 mb-2">
-                <div class="card stat-card bg-info text-white">
-                    <div class="card-body">
-                        <h6><i class="bi bi-currency-dollar"></i> Preço Médio</h6>
-                        <h3 id="stat-avg">R$ 0</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 mb-2">
-                <div class="card stat-card bg-warning text-dark">
-                    <div class="card-body">
-                        <h6><i class="bi bi-plus-circle"></i> Adicionar</h6>
-                        <button class="btn btn-dark btn-sm w-100 mt-1" data-bs-toggle="modal" data-bs-target="#addModal">
-                            <i class="bi bi-plus"></i> Novo
+
+            <!-- Tab: Configure Sites -->
+            <div class="tab-pane fade" id="tab-sites">
+                <div class="card">
+                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-gear"></i> Sites de Leilão Configurados</h5>
+                        <button class="btn btn-light btn-sm" onclick="openAddSiteModal()">
+                            <i class="bi bi-plus"></i> Adicionar Site
                         </button>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Search -->
-        <div class="card mb-4">
-            <div class="card-header bg-dark text-white">
-                <h5 class="mb-0"><i class="bi bi-search"></i> Filtros de Pesquisa</h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <input type="text" class="form-control" id="searchQuery" placeholder="Buscar..." onkeyup="filterWatches()">
-                    </div>
-                    <div class="col-md-2">
-                        <select class="form-select" id="filterBrand" onchange="filterWatches()">
-                            <option value="">Todas marcas</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <select class="form-select" id="filterMaterial" onchange="filterWatches()">
-                            <option value="">Todos materiais</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <input type="number" class="form-control" id="minPrice" placeholder="Preço min" onchange="filterWatches()">
-                    </div>
-                    <div class="col-md-2">
-                        <input type="number" class="form-control" id="maxPrice" placeholder="Preço max" onchange="filterWatches()">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>URL</th>
+                                        <th>Categoria</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sitesTable"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Results -->
-        <div class="card">
-            <div class="card-header bg-dark text-white d-flex justify-content-between">
-                <h5 class="mb-0"><i class="bi bi-list"></i> Relógios</h5>
-                <span class="badge bg-light text-dark" id="resultCount">0</span>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Marca</th>
-                            <th>Modelo</th>
-                            <th>Material</th>
-                            <th>Ano</th>
-                            <th class="text-end">Preço</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="watchesTable"></tbody>
-                </table>
             </div>
         </div>
     </main>
 
-    <!-- Add/Edit Modal -->
+    <!-- Add/Edit Watch Modal -->
     <div class="modal fade" id="addModal" tabindex="-1">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
@@ -218,7 +360,7 @@
         </div>
     </div>
 
-    <!-- View Modal -->
+    <!-- View Watch Modal -->
     <div class="modal fade" id="viewModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -239,23 +381,85 @@
         </div>
     </div>
 
+    <!-- Add Site Modal -->
+    <div class="modal fade" id="addSiteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="bi bi-globe"></i> Adicionar Site de Leilão</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nome do Site *</label>
+                        <input type="text" class="form-control" id="siteName" placeholder="Ex: Leilões BR">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">URL da página de relógios *</label>
+                        <input type="url" class="form-control" id="siteUrl" placeholder="https://www.exemplo.com/relogios">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Categoria</label>
+                        <input type="text" class="form-control" id="siteCategory" placeholder="Ex: Joalheria">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveSite()">
+                        <i class="bi bi-check"></i> Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Database in localStorage
+        // Database keys
         const DB_KEY = 'watchAuctionDB';
-        let watches = JSON.parse(localStorage.getItem(DB_KEY)) || [];
-        let currentViewId = null;
+        const SITES_KEY = 'watchAuctionSites';
 
-        // Known brands for autocomplete
+        // Data
+        let watches = JSON.parse(localStorage.getItem(DB_KEY)) || [];
+        let sites = JSON.parse(localStorage.getItem(SITES_KEY)) || [
+            { id: '1', name: 'Leilões BR', url: 'https://www.leiloesbr.com.br/joalheria/relogios', category: 'Joalheria' },
+            { id: '2', name: 'Sothebys', url: 'https://www.sothebys.com/en/buy/watches', category: 'Luxo' },
+            { id: '3', name: 'Christies', url: 'https://www.christies.com/en/events/watches', category: 'Luxo' },
+            { id: '4', name: 'Mercado Livre', url: 'https://lista.mercadolivre.com.br/relogios', category: 'Marketplace' },
+        ];
+        let selectedSiteId = sites[0]?.id;
+        let currentViewId = null;
+        let extractedWatches = [];
+
+        // Known brands
         const KNOWN_BRANDS = ['Rolex', 'Omega', 'Patek Philippe', 'Audemars Piguet', 'Cartier',
             'Tag Heuer', 'Breitling', 'IWC', 'Panerai', 'Hublot', 'Tudor', 'Longines',
-            'Tissot', 'Seiko', 'Citizen', 'Chopard', 'Bulgari', 'Montblanc', 'Oris'];
+            'Tissot', 'Seiko', 'Citizen', 'Chopard', 'Bulgari', 'Montblanc', 'Oris',
+            'Vacheron Constantin', 'Jaeger-LeCoultre', 'Zenith', 'Rado', 'Hamilton',
+            'Technos', 'Orient', 'Casio', 'Invicta', 'Fossil', 'Michael Kors'];
 
+        // Materials patterns
+        const MATERIALS = {
+            'Ouro rosa': ['ouro rosa', 'rose gold', 'rosê'],
+            'Ouro amarelo': ['ouro amarelo', 'yellow gold', 'ouro 18k', 'ouro 750'],
+            'Ouro branco': ['ouro branco', 'white gold'],
+            'Aço e ouro': ['aço e ouro', 'steel and gold', 'aço/ouro', 'bicolor', 'two-tone'],
+            'Aço': ['aço', 'steel', 'aço inox', 'stainless'],
+            'Ouro': ['ouro', 'gold'],
+            'Titânio': ['titânio', 'titanium'],
+            'Platina': ['platina', 'platinum'],
+            'Cerâmica': ['cerâmica', 'ceramic'],
+        };
+
+        // === Database Functions ===
         function saveDB() {
             localStorage.setItem(DB_KEY, JSON.stringify(watches));
+            localStorage.setItem(SITES_KEY, JSON.stringify(sites));
             updateStats();
             updateFilters();
             filterWatches();
+            renderSites();
+            renderSiteButtons();
         }
 
         function formatCurrency(value) {
@@ -263,6 +467,7 @@
             return 'R$ ' + parseFloat(value).toLocaleString('pt-BR', {minimumFractionDigits: 2});
         }
 
+        // === Stats & Filters ===
         function updateStats() {
             const total = watches.length;
             const brands = [...new Set(watches.map(w => w.brand).filter(b => b))].length;
@@ -278,18 +483,14 @@
             const brands = [...new Set(watches.map(w => w.brand).filter(b => b))].sort();
             const materials = [...new Set(watches.map(w => w.material).filter(m => m))].sort();
 
-            const brandSelect = document.getElementById('filterBrand');
-            const materialSelect = document.getElementById('filterMaterial');
-            const brandsList = document.getElementById('brandsList');
-
-            brandSelect.innerHTML = '<option value="">Todas marcas</option>' +
+            document.getElementById('filterBrand').innerHTML = '<option value="">Todas marcas</option>' +
                 brands.map(b => `<option>${b}</option>`).join('');
 
-            materialSelect.innerHTML = '<option value="">Todos materiais</option>' +
+            document.getElementById('filterMaterial').innerHTML = '<option value="">Todos materiais</option>' +
                 materials.map(m => `<option>${m}</option>`).join('');
 
             const allBrands = [...new Set([...KNOWN_BRANDS, ...brands])].sort();
-            brandsList.innerHTML = allBrands.map(b => `<option value="${b}">`).join('');
+            document.getElementById('brandsList').innerHTML = allBrands.map(b => `<option value="${b}">`).join('');
         }
 
         function filterWatches() {
@@ -333,6 +534,7 @@
             `).join('');
         }
 
+        // === Watch CRUD ===
         function openAddModal() {
             document.getElementById('modalTitle').textContent = 'Adicionar Relógio';
             document.getElementById('watchForm').reset();
@@ -353,8 +555,7 @@
                             `<img src="${w.imageUrl}" class="img-fluid rounded" style="max-height:200px">` :
                             `<div class="bg-light rounded d-flex align-items-center justify-content-center" style="height:150px">
                                 <i class="bi bi-watch text-muted" style="font-size:3rem"></i>
-                            </div>`
-                        }
+                            </div>`}
                     </div>
                     <div class="col-md-8">
                         <h4 class="text-success mb-3">${formatCurrency(w.price)}</h4>
@@ -373,12 +574,8 @@
             `;
 
             const sourceLink = document.getElementById('viewSourceLink');
-            if (w.sourceUrl) {
-                sourceLink.href = w.sourceUrl;
-                sourceLink.style.display = 'inline-block';
-            } else {
-                sourceLink.style.display = 'none';
-            }
+            sourceLink.style.display = w.sourceUrl ? 'inline-block' : 'none';
+            sourceLink.href = w.sourceUrl || '#';
 
             new bootstrap.Modal(document.getElementById('viewModal')).show();
         }
@@ -428,12 +625,9 @@
                 updatedAt: new Date().toISOString()
             };
 
-            const existingIndex = watches.findIndex(w => w.id === id);
-            if (existingIndex >= 0) {
-                watches[existingIndex] = watch;
-            } else {
-                watches.push(watch);
-            }
+            const idx = watches.findIndex(w => w.id === id);
+            if (idx >= 0) watches[idx] = watch;
+            else watches.push(watch);
 
             saveDB();
             bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
@@ -447,6 +641,200 @@
             bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
         }
 
+        // === Sites Management ===
+        function renderSiteButtons() {
+            const container = document.getElementById('siteButtons');
+            container.innerHTML = sites.map(s => `
+                <button class="btn ${s.id === selectedSiteId ? 'btn-primary' : 'btn-outline-primary'} site-badge"
+                    onclick="selectSite('${s.id}')">
+                    <i class="bi bi-globe"></i> ${s.name}
+                </button>
+            `).join('');
+        }
+
+        function renderSites() {
+            document.getElementById('sitesTable').innerHTML = sites.map(s => `
+                <tr>
+                    <td><strong>${s.name}</strong></td>
+                    <td><a href="${s.url}" target="_blank">${s.url.substring(0,50)}...</a></td>
+                    <td><span class="badge bg-secondary">${s.category || '-'}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteSite('${s.id}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function selectSite(id) {
+            selectedSiteId = id;
+            renderSiteButtons();
+        }
+
+        function openSelectedSite() {
+            const site = sites.find(s => s.id === selectedSiteId);
+            if (site) window.open(site.url, '_blank');
+        }
+
+        function openAddSiteModal() {
+            document.getElementById('siteName').value = '';
+            document.getElementById('siteUrl').value = '';
+            document.getElementById('siteCategory').value = '';
+            new bootstrap.Modal(document.getElementById('addSiteModal')).show();
+        }
+
+        function saveSite() {
+            const name = document.getElementById('siteName').value.trim();
+            const url = document.getElementById('siteUrl').value.trim();
+            const category = document.getElementById('siteCategory').value.trim();
+
+            if (!name || !url) {
+                alert('Preencha nome e URL');
+                return;
+            }
+
+            sites.push({ id: Date.now().toString(), name, url, category });
+            saveDB();
+            bootstrap.Modal.getInstance(document.getElementById('addSiteModal')).hide();
+        }
+
+        function deleteSite(id) {
+            if (!confirm('Remover este site?')) return;
+            sites = sites.filter(s => s.id !== id);
+            if (selectedSiteId === id) selectedSiteId = sites[0]?.id;
+            saveDB();
+        }
+
+        // === Text Extraction ===
+        function extractFromPaste() {
+            const text = document.getElementById('pasteArea').value;
+            if (!text.trim()) {
+                alert('Cole o conteúdo da página primeiro');
+                return;
+            }
+
+            extractedWatches = parseWatchesFromText(text);
+
+            if (extractedWatches.length === 0) {
+                alert('Nenhum relógio encontrado. Tente copiar mais conteúdo da página.');
+                return;
+            }
+
+            document.getElementById('extractionCount').textContent = extractedWatches.length;
+            document.getElementById('extractedTable').innerHTML = extractedWatches.map((w, i) => `
+                <tr>
+                    <td><input type="checkbox" class="extracted-check" data-index="${i}" checked></td>
+                    <td>${w.description || '-'}</td>
+                    <td>${w.brand || '-'}</td>
+                    <td>${formatCurrency(w.price)}</td>
+                </tr>
+            `).join('');
+            document.getElementById('extractionResults').style.display = 'block';
+            document.getElementById('selectAllExtracted').checked = true;
+        }
+
+        function parseWatchesFromText(text) {
+            const results = [];
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+
+            // Price pattern
+            const pricePattern = /R\$\s*([\d.,]+)/gi;
+
+            // Find lines with prices
+            let currentItem = null;
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const priceMatch = line.match(pricePattern);
+
+                // Check if line contains watch-related keywords
+                const isWatchLine = KNOWN_BRANDS.some(b => line.toLowerCase().includes(b.toLowerCase())) ||
+                    /rel[oó]gio|watch|cronógrafo|autom[aá]tico/i.test(line);
+
+                if (isWatchLine || priceMatch) {
+                    if (priceMatch && currentItem) {
+                        // Add price to current item
+                        const priceStr = priceMatch[0].replace(/[R$\s]/g, '').replace('.', '').replace(',', '.');
+                        currentItem.price = parseFloat(priceStr) || 0;
+                        results.push(currentItem);
+                        currentItem = null;
+                    } else if (isWatchLine) {
+                        // Start new item
+                        currentItem = {
+                            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                            description: line.substring(0, 200),
+                            brand: extractBrand(line),
+                            material: extractMaterial(line),
+                            year: extractYear(line),
+                            price: 0,
+                            sourceUrl: sites.find(s => s.id === selectedSiteId)?.url || ''
+                        };
+
+                        // Check if price is in same line
+                        if (priceMatch) {
+                            const priceStr = priceMatch[0].replace(/[R$\s]/g, '').replace('.', '').replace(',', '.');
+                            currentItem.price = parseFloat(priceStr) || 0;
+                            results.push(currentItem);
+                            currentItem = null;
+                        }
+                    }
+                }
+            }
+
+            return results;
+        }
+
+        function extractBrand(text) {
+            const lower = text.toLowerCase();
+            for (const brand of KNOWN_BRANDS) {
+                if (lower.includes(brand.toLowerCase())) return brand;
+            }
+            return '';
+        }
+
+        function extractMaterial(text) {
+            const lower = text.toLowerCase();
+            for (const [name, patterns] of Object.entries(MATERIALS)) {
+                if (patterns.some(p => lower.includes(p))) return name;
+            }
+            return '';
+        }
+
+        function extractYear(text) {
+            const match = text.match(/\b(19[0-9]{2}|20[0-2][0-9])\b/);
+            return match ? parseInt(match[1]) : null;
+        }
+
+        function toggleAllExtracted() {
+            const checked = document.getElementById('selectAllExtracted').checked;
+            document.querySelectorAll('.extracted-check').forEach(cb => cb.checked = checked);
+        }
+
+        function importSelected() {
+            const selected = [];
+            document.querySelectorAll('.extracted-check:checked').forEach(cb => {
+                const idx = parseInt(cb.dataset.index);
+                selected.push(extractedWatches[idx]);
+            });
+
+            if (selected.length === 0) {
+                alert('Selecione pelo menos um item');
+                return;
+            }
+
+            watches.push(...selected);
+            saveDB();
+
+            alert(`${selected.length} relógio(s) importado(s) com sucesso!`);
+            document.getElementById('pasteArea').value = '';
+            document.getElementById('extractionResults').style.display = 'none';
+
+            // Switch to search tab
+            document.querySelector('[data-bs-target="#tab-search"]').click();
+        }
+
+        // === Export ===
         function exportData(format) {
             if (watches.length === 0) {
                 alert('Nenhum dado para exportar');
@@ -479,7 +867,7 @@
             URL.revokeObjectURL(url);
         }
 
-        // Initialize
+        // === Initialize ===
         document.getElementById('addModal').addEventListener('show.bs.modal', function(e) {
             if (!document.getElementById('watchId').value) openAddModal();
         });
@@ -487,6 +875,8 @@
         updateStats();
         updateFilters();
         filterWatches();
+        renderSites();
+        renderSiteButtons();
     </script>
 </body>
 </html>
