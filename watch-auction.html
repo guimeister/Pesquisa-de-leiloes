@@ -53,8 +53,13 @@
                 </button>
             </li>
             <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-auto">
+                    <i class="bi bi-robot"></i> Varredura Automática
+                </button>
+            </li>
+            <li class="nav-item">
                 <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-batch">
-                    <i class="bi bi-collection"></i> Importar Múltiplas Páginas
+                    <i class="bi bi-collection"></i> Importar Manual
                 </button>
             </li>
             <li class="nav-item">
@@ -231,6 +236,162 @@
                                 <i class="bi bi-download"></i> Importar Selecionados
                             </button>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Automatic Scan -->
+            <div class="tab-pane fade" id="tab-auto">
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0"><i class="bi bi-robot"></i> Varredura Automática de Páginas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-success">
+                            <i class="bi bi-lightning-charge"></i>
+                            <strong>Modo Automático:</strong> A aplicação vai automaticamente vasculhar todas as páginas do site
+                            selecionado e capturar os dados dos relógios sem intervenção manual.
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">1. Selecione o site:</label>
+                                <div class="d-flex flex-wrap gap-2" id="siteButtonsAuto"></div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Página inicial:</label>
+                                <input type="number" class="form-control" id="autoStartPage" value="1" min="1">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Página final:</label>
+                                <input type="number" class="form-control" id="autoEndPage" value="10" min="1">
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Proxy CORS:</label>
+                                <select class="form-select" id="corsProxy">
+                                    <option value="allorigins">AllOrigins (Recomendado)</option>
+                                    <option value="corsproxy">CorsProxy.io</option>
+                                    <option value="corsanywhere">CORS Anywhere</option>
+                                    <option value="codetabs">CodeTabs</option>
+                                </select>
+                                <small class="text-muted">Se um proxy não funcionar, tente outro</small>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Delay entre páginas:</label>
+                                <select class="form-select" id="autoDelay">
+                                    <option value="1000">1 segundo</option>
+                                    <option value="2000" selected>2 segundos</option>
+                                    <option value="3000">3 segundos</option>
+                                    <option value="5000">5 segundos</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button class="btn btn-primary btn-lg w-100" onclick="startAutoScan()" id="startScanBtn">
+                                    <i class="bi bi-play-fill"></i> Iniciar Varredura
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Progress Section -->
+                        <div id="scanProgress" style="display:none">
+                            <div class="card bg-light mb-4">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span id="scanStatus">Iniciando...</span>
+                                        <button class="btn btn-danger btn-sm" onclick="stopAutoScan()">
+                                            <i class="bi bi-stop-fill"></i> Parar
+                                        </button>
+                                    </div>
+                                    <div class="progress" style="height: 25px;">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                            id="scanProgressBar" style="width: 0%">0%</div>
+                                    </div>
+                                    <div class="row mt-3 text-center">
+                                        <div class="col-3">
+                                            <div class="h4 text-primary mb-0" id="scanPagesProcessed">0</div>
+                                            <small class="text-muted">Páginas</small>
+                                        </div>
+                                        <div class="col-3">
+                                            <div class="h4 text-success mb-0" id="scanWatchesFound">0</div>
+                                            <small class="text-muted">Relógios</small>
+                                        </div>
+                                        <div class="col-3">
+                                            <div class="h4 text-warning mb-0" id="scanErrors">0</div>
+                                            <small class="text-muted">Erros</small>
+                                        </div>
+                                        <div class="col-3">
+                                            <div class="h4 text-info mb-0" id="scanTimeRemaining">--</div>
+                                            <small class="text-muted">Restante</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Log -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Log de atividade:</label>
+                                <div class="border rounded p-2 bg-dark text-light"
+                                    style="height: 150px; overflow-y: auto; font-family: monospace; font-size: 0.85rem;"
+                                    id="scanLog"></div>
+                            </div>
+                        </div>
+
+                        <!-- Results Preview -->
+                        <div id="autoResults" style="display:none">
+                            <div class="alert alert-success">
+                                <i class="bi bi-check-circle"></i> Varredura concluída!
+                                <strong><span id="autoTotalFound">0</span> relógios</strong> encontrados em
+                                <strong><span id="autoTotalPages">0</span> páginas</strong>.
+                            </div>
+
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-sm table-striped">
+                                    <thead class="sticky-top bg-white">
+                                        <tr>
+                                            <th><input type="checkbox" id="selectAllAuto" onchange="toggleAllAuto()" checked></th>
+                                            <th>Descrição</th>
+                                            <th>Marca</th>
+                                            <th>Material</th>
+                                            <th>Preço</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="autoResultsTable"></tbody>
+                                </table>
+                            </div>
+
+                            <div class="d-flex gap-2 mt-3">
+                                <button class="btn btn-success btn-lg" onclick="importAutoResults()">
+                                    <i class="bi bi-download"></i> Importar Selecionados
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="clearAutoResults()">
+                                    <i class="bi bi-trash"></i> Limpar Resultados
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="bi bi-info-circle"></i> Como funciona</h6>
+                    </div>
+                    <div class="card-body">
+                        <ol class="mb-0">
+                            <li>Selecione o site de leilão que deseja varrer</li>
+                            <li>Defina o intervalo de páginas (ex: 1 a 20)</li>
+                            <li>Clique em "Iniciar Varredura"</li>
+                            <li>A aplicação irá automaticamente:
+                                <ul>
+                                    <li>Acessar cada página através de um proxy CORS</li>
+                                    <li>Extrair todos os dados de relógios</li>
+                                    <li>Identificar marcas, modelos, materiais e preços</li>
+                                </ul>
+                            </li>
+                            <li>Revise os resultados e importe os que desejar</li>
+                        </ol>
                     </div>
                 </div>
             </div>
@@ -561,6 +722,7 @@
             filterWatches();
             renderSites();
             renderSiteButtons();
+            if (document.getElementById('siteButtonsAuto')) renderSiteButtonsAuto();
         }
 
         function formatCurrency(value) {
@@ -753,7 +915,11 @@
             `).join('');
         }
 
-        function selectSite(id) { selectedSiteId = id; renderSiteButtons(); }
+        function selectSite(id) {
+            selectedSiteId = id;
+            renderSiteButtons();
+            if (document.getElementById('siteButtonsAuto')) renderSiteButtonsAuto();
+        }
 
         function openSelectedSite() {
             const site = sites.find(s => s.id === selectedSiteId);
@@ -1083,6 +1249,292 @@
             document.querySelector('[data-bs-target="#tab-search"]').click();
         }
 
+        // === Automatic Scan ===
+        let scanRunning = false;
+        let scanAborted = false;
+        let autoScannedWatches = [];
+
+        const CORS_PROXIES = {
+            allorigins: url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+            corsproxy: url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+            corsanywhere: url => `https://cors-anywhere.herokuapp.com/${url}`,
+            codetabs: url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
+        };
+
+        function renderSiteButtonsAuto() {
+            const html = sites.map(s => `
+                <button class="btn ${s.id === selectedSiteId ? 'btn-primary' : 'btn-outline-primary'} site-badge"
+                    onclick="selectSite('${s.id}'); renderSiteButtonsAuto();"><i class="bi bi-globe"></i> ${s.name}</button>
+            `).join('');
+            document.getElementById('siteButtonsAuto').innerHTML = html;
+        }
+
+        function logScan(message, type = 'info') {
+            const logEl = document.getElementById('scanLog');
+            const time = new Date().toLocaleTimeString('pt-BR');
+            const colors = { info: '#6c757d', success: '#28a745', error: '#dc3545', warning: '#ffc107' };
+            logEl.innerHTML += `<div style="color: ${colors[type] || colors.info}">[${time}] ${message}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        async function fetchWithProxy(url, proxyName) {
+            const proxyFn = CORS_PROXIES[proxyName];
+            if (!proxyFn) throw new Error('Proxy não encontrado');
+
+            const proxyUrl = proxyFn(url);
+            const response = await fetch(proxyUrl, {
+                headers: { 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            return await response.text();
+        }
+
+        function extractWatchesFromHTML(html) {
+            const results = [];
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            // Remove scripts and styles
+            doc.querySelectorAll('script, style, noscript').forEach(el => el.remove());
+
+            // Get all text content
+            const textContent = doc.body?.innerText || doc.body?.textContent || '';
+
+            // Also try to find structured data
+            const productElements = doc.querySelectorAll(
+                '[class*="product"], [class*="item"], [class*="lote"], [class*="lot"], ' +
+                '[class*="watch"], [class*="relogio"], [data-product], [itemtype*="Product"]'
+            );
+
+            // Extract from structured elements first
+            productElements.forEach(el => {
+                const text = el.innerText || el.textContent || '';
+                if (text.length > 20 && text.length < 2000) {
+                    const watch = parseWatchFromText(text);
+                    if (watch && (watch.brand || watch.price > 0)) {
+                        results.push(watch);
+                    }
+                }
+            });
+
+            // If no structured elements found, parse full text
+            if (results.length === 0) {
+                const parsed = parseWatchesFromText(textContent);
+                results.push(...parsed.watches);
+            }
+
+            return results;
+        }
+
+        function parseWatchFromText(text) {
+            const lower = text.toLowerCase();
+
+            // Check if it's watch-related
+            const hasBrand = KNOWN_BRANDS.some(b => lower.includes(b.toLowerCase()));
+            const hasWatchKeyword = /rel[oó]gio|watch|cron[oó]grafo|chronograph|autom[aá]tico|lote\s*\d/i.test(text);
+
+            if (!hasBrand && !hasWatchKeyword) return null;
+
+            // Extract price
+            let price = 0;
+            const pricePatterns = [
+                /R\$\s*([\d.,]+)/i,
+                /(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)\s*(?:reais|BRL)/i,
+                /Lance[:\s]*([\d.,]+)/i
+            ];
+            for (const pattern of pricePatterns) {
+                const match = text.match(pattern);
+                if (match) {
+                    price = parseFloat(match[1].replace(/\./g, '').replace(',', '.')) || 0;
+                    break;
+                }
+            }
+
+            // Build description (first meaningful line)
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 10);
+            const description = lines[0]?.substring(0, 250) || text.substring(0, 250);
+
+            return {
+                id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                description: description,
+                brand: extractBrand(text),
+                model: extractModel(text),
+                material: extractMaterial(text),
+                braceletMaterial: extractBraceletMaterial(text),
+                year: extractYear(text),
+                specification: extractSpecification(text),
+                weight: extractWeight(text),
+                price: price,
+                sourceUrl: ''
+            };
+        }
+
+        async function startAutoScan() {
+            const site = sites.find(s => s.id === selectedSiteId);
+            if (!site) {
+                alert('Selecione um site primeiro');
+                return;
+            }
+
+            const startPage = parseInt(document.getElementById('autoStartPage').value) || 1;
+            const endPage = parseInt(document.getElementById('autoEndPage').value) || 10;
+            const delay = parseInt(document.getElementById('autoDelay').value) || 2000;
+            const proxyName = document.getElementById('corsProxy').value;
+
+            if (startPage > endPage) {
+                alert('A página inicial deve ser menor ou igual à página final');
+                return;
+            }
+
+            // Initialize
+            scanRunning = true;
+            scanAborted = false;
+            autoScannedWatches = [];
+
+            const totalPages = endPage - startPage + 1;
+            let pagesProcessed = 0;
+            let watchesFound = 0;
+            let errors = 0;
+
+            // Show progress UI
+            document.getElementById('scanProgress').style.display = 'block';
+            document.getElementById('autoResults').style.display = 'none';
+            document.getElementById('startScanBtn').disabled = true;
+            document.getElementById('scanLog').innerHTML = '';
+
+            logScan(`Iniciando varredura de ${site.name}...`, 'info');
+            logScan(`Páginas: ${startPage} a ${endPage} (${totalPages} total)`, 'info');
+            logScan(`Proxy: ${proxyName}`, 'info');
+            logScan(`Delay: ${delay}ms entre páginas`, 'info');
+            logScan('---', 'info');
+
+            for (let page = startPage; page <= endPage && !scanAborted; page++) {
+                const pageUrl = site.url.replace('{page}', page.toString());
+
+                try {
+                    logScan(`Buscando página ${page}...`, 'info');
+
+                    const html = await fetchWithProxy(pageUrl, proxyName);
+                    const pageWatches = extractWatchesFromHTML(html);
+
+                    // Add source URL to watches
+                    pageWatches.forEach(w => w.sourceUrl = pageUrl);
+
+                    autoScannedWatches.push(...pageWatches);
+                    watchesFound += pageWatches.length;
+
+                    logScan(`Página ${page}: ${pageWatches.length} relógios encontrados`, 'success');
+
+                } catch (error) {
+                    errors++;
+                    logScan(`Página ${page}: Erro - ${error.message}`, 'error');
+
+                    // Try alternative proxy on error
+                    if (errors >= 3) {
+                        logScan('Muitos erros. Tente outro proxy ou verifique a conexão.', 'warning');
+                    }
+                }
+
+                pagesProcessed++;
+
+                // Update progress
+                const progress = Math.round((pagesProcessed / totalPages) * 100);
+                document.getElementById('scanProgressBar').style.width = `${progress}%`;
+                document.getElementById('scanProgressBar').textContent = `${progress}%`;
+                document.getElementById('scanPagesProcessed').textContent = pagesProcessed;
+                document.getElementById('scanWatchesFound').textContent = watchesFound;
+                document.getElementById('scanErrors').textContent = errors;
+
+                const remaining = (totalPages - pagesProcessed) * (delay / 1000);
+                document.getElementById('scanTimeRemaining').textContent =
+                    remaining > 60 ? `${Math.ceil(remaining / 60)}min` : `${Math.ceil(remaining)}s`;
+
+                document.getElementById('scanStatus').textContent =
+                    `Processando página ${page} de ${endPage}...`;
+
+                // Wait before next page
+                if (page < endPage && !scanAborted) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+
+            scanRunning = false;
+            document.getElementById('startScanBtn').disabled = false;
+
+            if (scanAborted) {
+                logScan('Varredura interrompida pelo usuário', 'warning');
+                document.getElementById('scanStatus').textContent = 'Interrompido';
+            } else {
+                logScan('---', 'info');
+                logScan(`Varredura concluída! ${watchesFound} relógios em ${pagesProcessed} páginas`, 'success');
+                document.getElementById('scanStatus').textContent = 'Concluído!';
+            }
+
+            // Show results
+            if (autoScannedWatches.length > 0) {
+                showAutoResults();
+            }
+        }
+
+        function stopAutoScan() {
+            scanAborted = true;
+            logScan('Interrompendo varredura...', 'warning');
+        }
+
+        function showAutoResults() {
+            document.getElementById('autoResults').style.display = 'block';
+            document.getElementById('autoTotalFound').textContent = autoScannedWatches.length;
+            document.getElementById('autoTotalPages').textContent =
+                document.getElementById('scanPagesProcessed').textContent;
+
+            document.getElementById('autoResultsTable').innerHTML = autoScannedWatches.map((w, i) => `
+                <tr>
+                    <td><input type="checkbox" class="auto-check" data-index="${i}" checked></td>
+                    <td>${(w.description || '').substring(0, 60)}...</td>
+                    <td><strong>${w.brand || '-'}</strong></td>
+                    <td><span class="badge bg-secondary">${w.material || '-'}</span></td>
+                    <td class="text-success">${formatCurrency(w.price)}</td>
+                </tr>
+            `).join('');
+
+            document.getElementById('selectAllAuto').checked = true;
+        }
+
+        function toggleAllAuto() {
+            const checked = document.getElementById('selectAllAuto').checked;
+            document.querySelectorAll('.auto-check').forEach(cb => cb.checked = checked);
+        }
+
+        function importAutoResults() {
+            const selected = [];
+            document.querySelectorAll('.auto-check:checked').forEach(cb => {
+                selected.push(autoScannedWatches[parseInt(cb.dataset.index)]);
+            });
+
+            if (selected.length === 0) {
+                alert('Selecione pelo menos um item');
+                return;
+            }
+
+            watches.push(...selected);
+            saveDB();
+            alert(`${selected.length} relógio(s) importado(s) com sucesso!`);
+
+            clearAutoResults();
+            document.querySelector('[data-bs-target="#tab-search"]').click();
+        }
+
+        function clearAutoResults() {
+            autoScannedWatches = [];
+            document.getElementById('autoResults').style.display = 'none';
+            document.getElementById('scanProgress').style.display = 'none';
+            document.getElementById('scanLog').innerHTML = '';
+        }
+
         // === Export ===
         function exportData(format) {
             if (watches.length === 0) { alert('Nenhum dado para exportar'); return; }
@@ -1120,6 +1572,7 @@
         filterWatches();
         renderSites();
         renderSiteButtons();
+        renderSiteButtonsAuto();
     </script>
 </body>
 </html>
